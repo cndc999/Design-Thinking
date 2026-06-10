@@ -16,6 +16,11 @@ const ICONS = {
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
   syringe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4M15 5l6 6M10.5 9.5L3 17v4h4l7.5-7.5M10.5 9.5l3-3M13.5 6.5l3 3"/></svg>',
   paw: '<svg viewBox="0 0 512 512" fill="currentColor"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5c-14.3-42.9.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7.9 78.6 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5v1.6c0 25.8-20.9 46.7-46.7 46.7-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2-25.8 0-46.7-20.9-46.7-46.7v-1.6c0-10.4 1.6-20.8 5.2-30.5zM312 128c-14.3-42.9.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5zm99.2 70.7c-18.9 32.4-14.3 70.1 10.2 84.1s59.7-.9 78.5-33.3 14.3-70.1-10.2-84.1-59.7.9-78.5 33.3z"/></svg>',
+  comment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+  heartFill: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
 };
 
 /* ===== BREED DATA với ảnh thật ===== */
@@ -80,5 +85,35 @@ const state = {
     date: '2026-06-04', time: '09:00',
     location: 'Phòng Khám Thú Y Yên Lãng',
     reminder: '1 ngày', note: ''
-  }
+  },
+
+  posts: [
+    {
+      id: 1, userId: 'user1', userName: 'Thanh Độ', userAvatar: 'PC',
+      petName: 'Luna', petBreed: 'Golden Retriever',
+      content: 'Hí anh em',
+      img: 'img/post/post1.jpg',
+      likes: 36, comments: 5, liked: false,
+      time: '18 giờ trước'
+    },
+    {
+      id: 2, userId: 'user2', userName: 'Thế Anh', userAvatar: 'TA',
+      petName: 'Bam', petBreed: 'Pomeranian',
+      content: 'Bam đi tiêm phòng hôm nay',
+      img: 'img/post/post2.webp',
+      likes: 18, comments: 3, liked: false,
+      time: '5 giờ trước'
+    },
+    {
+      id: 3, userId: 'user3', userName: 'Tuấn Tú', userAvatar: 'Duck',
+      petName: 'Bão', petBreed: 'British Shorthair',
+      content: 'Mèo nhà mình lười quá, cả ngày chỉ nằm ngủ thôi,',
+      img: 'img/post/post3.webp',
+      likes: 42, comments: 12, liked: false,
+      time: 'Hôm qua'
+    },
+      
+  ],
+ 
+  newPost: { content: '', petId: null, photo: null }
 };

@@ -18,6 +18,9 @@ function getScreenHTML(screen) {
     case 'grooming': return screenGrooming();
     case 'bath': return screenBath();
     case 'editpet': return screenEditPet();
+    case 'community': return screenCommunity();
+    case 'createpost': return screenCreatePost();
+    case 'genericsuccess': return screenGenericSuccess();
     default: return screenIntro();
   }
 }
@@ -230,6 +233,16 @@ function screenHome() {
           <span class="reminder-chip">2:30 chiều</span>
           <span class="reminder-chip">Happy Paws Clinic</span>
         </div>
+      </div>
+
+      <!-- Community -->
+      <div class="community-preview" onclick="goTo('community')">
+        <div class="community-header">
+          <span class="community-icon">${ICONS.users}</span>
+          <span class="community-title">Cộng đồng thú cưng</span>
+          <span class="community-badge">${state.posts.length} bài mới</span>
+        </div>
+        <div class="community-peek">${state.posts[0] ? state.posts[0].content.substring(0, 60) + '...' : ''}</div>
       </div>
 
       <!-- Pet list -->
@@ -570,7 +583,7 @@ function screenCheckup() {
         </div>
       </div>
 
-      <button class="btn-primary" onclick="showToast('Đã đặt lịch khám thành công!'); setTimeout(()=>goTo('schedule'),800)">Xác nhận đặt lịch</button>
+      <button class="btn-primary" onclick="handleServiceSuccess('Kiểm tra tổng quát','checkup')">Xác nhận đặt lịch</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -707,7 +720,7 @@ function screenGrooming() {
         </div>
       </div>
 
-      <button class="btn-primary" onclick="showToast('Đã đặt lịch cắt lông!'); setTimeout(()=>goTo('schedule'),800)">Xác nhận</button>
+      <button class="btn-primary" onclick="handleServiceSuccess('Cắt lông','grooming')">Xác nhận</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -776,7 +789,7 @@ function screenBath() {
         </div>
       </div>
 
-      <button class="btn-primary" onclick="showToast('Đã đặt lịch tắm!'); setTimeout(()=>goTo('schedule'),800)">Xác nhận</button>
+      <button class="btn-primary" onclick="handleServiceSuccess('Tắm thú cưng','bath')">Xác nhận</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -853,6 +866,126 @@ function screenEditPet() {
 
       <button class="btn-primary" onclick="handleSaveEdit()">Lưu thay đổi</button>
       <button class="btn-ghost" onclick="goBack()">Hủy</button>
+    </div>
+  `;
+}
+
+/* ===== COMMUNITY FEED ===== */
+function screenCommunity() {
+  const postCards = state.posts.map(p => `
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-user-avatar">${p.userAvatar}</div>
+        <div class="post-user-info">
+          <div class="post-user-name">${p.userName}</div>
+          <div class="post-time">${p.time}</div>
+        </div>
+      </div>
+      <div class="post-pet-tag">${p.petName} — ${p.petBreed}</div>
+      <div class="post-content">${p.content}</div>
+      ${p.img ? `<div class="post-image"><img src="${p.img}" alt="Post"></div>` : ''}
+      <div class="post-actions">
+        <button class="post-action-btn ${p.liked?'liked':''}" data-post-id="${p.id}" data-action="like">
+          <span class="post-action-icon">${p.liked ? ICONS.heartFill : ICONS.heart}</span>
+          <span>${p.likes}</span>
+        </button>
+        <button class="post-action-btn" data-post-id="${p.id}" data-action="comment">
+          <span class="post-action-icon">${ICONS.comment}</span>
+          <span>${p.comments}</span>
+        </button>
+        <button class="post-action-btn" data-post-id="${p.id}" data-action="share">
+          <span class="post-action-icon">${ICONS.send}</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="screen-content">
+      <div class="community-top-bar">
+        <h1 class="page-title">Cộng đồng</h1>
+        <button class="btn-new-post" onclick="goTo('createpost')">+ Đăng bài</button>
+      </div>
+      <p class="page-subtitle">Chia sẻ khoảnh khắc với thú cưng</p>
+
+      <div id="post-feed">${postCards}</div>
+    </div>
+  `;
+}
+
+/* ===== CREATE POST ===== */
+function screenCreatePost() {
+  const petOptions = state.pets.map(p => `
+    <div class="post-pet-option ${state.newPost.petId===p.id?'selected':''}" data-pet-id="${p.id}">
+      <div class="psi-avatar"><img src="${p.img}" alt="${p.name}"></div>
+      <span>${p.name}</span>
+    </div>
+  `).join('');
+
+  return `
+    <div class="screen-content">
+      <h1 class="page-title">Tạo bài đăng</h1>
+      <p class="page-subtitle">Chia sẻ với cộng đồng</p>
+
+      <div class="form-group">
+        <label class="form-label">Chọn thú cưng</label>
+        <div class="post-pet-selector" id="post-pet-selector">${petOptions}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nội dung</label>
+        <textarea class="form-input post-textarea" id="post-content" rows="4" placeholder="Chia sẻ điều gì đó về thú cưng của bạn..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Ảnh</label>
+        <div class="post-photo-upload" id="post-photo-area">
+          <div class="post-photo-placeholder" id="post-photo-preview" onclick="document.getElementById('post-photo-input').click()">
+            <span class="post-photo-icon">${ICONS.image}</span>
+            <span>Thêm ảnh</span>
+          </div>
+          <input type="file" id="post-photo-input" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="handleCreatePost()">Đăng bài</button>
+      <button class="btn-ghost" onclick="goBack()">Hủy</button>
+    </div>
+  `;
+}
+
+/* ===== GENERIC SUCCESS (cho tất cả dịch vụ) ===== */
+function screenGenericSuccess() {
+  const s = state.lastSuccess || {};
+  const pet = state.pets.find(p => p.id === state.booking.petId) || state.pets[0];
+
+  const rows = [
+    { icon: ICONS.paw, label: 'Thú cưng', value: pet ? `${pet.name} | ${pet.breed}` : '—' },
+    { icon: ICONS.calendar, label: 'Dịch vụ', value: s.service || '—' },
+    { icon: ICONS.calendar, label: 'Ngày & Giờ', value: s.datetime || '—' },
+    { icon: ICONS.pin, label: 'Địa điểm', value: s.location || '—' },
+  ];
+
+  const summaryRows = rows.map(r => `
+    <div class="summary-row">
+      ${r.icon}
+      <div>
+        <div class="summary-label">${r.label}</div>
+        <div class="summary-value">${r.value}</div>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="success-header">
+      <div class="success-check">${ICONS.check}</div>
+      <h2 class="success-title">Đặt lịch thành công</h2>
+      <p class="success-sub">${s.subtitle || 'Lịch hẹn đã được lưu'}</p>
+    </div>
+    <div class="screen-content" style="padding-top:20px">
+      <div class="booking-summary">${summaryRows}</div>
+      <button class="btn-secondary" onclick="goTo('schedule')">Xem lịch hẹn</button>
+      <button class="btn-ghost" onclick="goHome()">Về màn hình chính</button>
     </div>
   `;
 }

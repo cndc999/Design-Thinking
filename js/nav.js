@@ -45,7 +45,7 @@ function renderTopnav(screen) {
   const nav = document.getElementById('topnav-container');
 
   // Screens that use success header (no topnav)
-  if (screen === 'success') {
+  if (screen === 'success' || screen === 'genericsuccess') {
     nav.innerHTML = '';
     return;
   }
@@ -60,7 +60,7 @@ function renderTopnav(screen) {
       <button class="topnav-btn-icon" onclick="goHome()" title="Trang chủ">${ICONS.home}</button>
     `;
   } else {
-    left = `<div class="topnav-avatar">G2</div>`;
+    left = `<div class="topnav-avatar">QA</div>`;
   }
 
   let right = '';

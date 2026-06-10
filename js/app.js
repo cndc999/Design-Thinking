@@ -12,6 +12,8 @@ function bindScreenEvents(screen) {
     case 'grooming': bindServiceScreen('groom-pet-list', 'groom-style', 'groom-time'); break;
     case 'bath': bindServiceScreen('bath-pet-list', 'bath-pkg', 'bath-time'); break;
     case 'editpet': bindEditPetEvents(); break;
+    case 'community': bindCommunityEvents(); break;
+    case 'createpost': bindCreatePostEvents(); break;
   }
 }
 
@@ -329,6 +331,103 @@ function handleSaveEdit() {
 
   showToast('Đã lưu thay đổi cho ' + name);
   setTimeout(() => goHome(), 600);
+}
+
+/* ===== COMMUNITY EVENTS ===== */
+function bindCommunityEvents() {
+  document.querySelectorAll('.post-action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const postId = parseInt(btn.dataset.postId);
+      const action = btn.dataset.action;
+      const post = state.posts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (action === 'like') {
+        post.liked = !post.liked;
+        post.likes += post.liked ? 1 : -1;
+        goTo('community'); // Re-render
+      } else if (action === 'comment') {
+        showToast('Bình luận — sắp ra mắt!');
+      } else if (action === 'share') {
+        showToast('Đã chia sẻ!');
+      }
+    });
+  });
+}
+
+function bindCreatePostEvents() {
+  // Pet selector
+  document.querySelectorAll('.post-pet-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      state.newPost.petId = parseInt(opt.dataset.petId);
+      document.querySelectorAll('.post-pet-option').forEach(x =>
+        x.classList.toggle('selected', x === opt)
+      );
+    });
+  });
+
+  // Photo upload
+  const photoInput = document.getElementById('post-photo-input');
+  const photoPreview = document.getElementById('post-photo-preview');
+  if (photoInput && photoPreview) {
+    photoInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        state.newPost.photo = ev.target.result;
+        photoPreview.innerHTML = `<img src="${ev.target.result}" alt="Preview" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
+function handleCreatePost() {
+  const content = document.getElementById('post-content').value.trim();
+  if (!content) { showToast('Vui lòng nhập nội dung'); return; }
+
+  const pet = state.pets.find(p => p.id === state.newPost.petId) || state.pets[0];
+  const newPost = {
+    id: Date.now(),
+    userId: 'me', userName: 'Bạn', userAvatar: 'ME',
+    petName: pet.name, petBreed: pet.breed,
+    content: content,
+    img: state.newPost.photo || pet.img,
+    likes: 0, comments: 0, liked: false,
+    time: 'Vừa xong'
+  };
+  state.posts.unshift(newPost);
+  state.newPost = { content: '', petId: null, photo: null };
+  showToast('Đã đăng bài thành công!');
+  setTimeout(() => goTo('community'), 600);
+}
+
+/* ===== GENERIC SERVICE SUCCESS ===== */
+function handleServiceSuccess(serviceName, serviceType) {
+  // Lấy thông tin từ form hiện tại
+  const pet = state.pets.find(p => p.id === state.booking.petId) || state.pets[0];
+  const dateEl = document.querySelector('input[type="date"]');
+  const timeSlot = document.querySelector('.time-slot.selected');
+  const locEl = document.querySelector('.location-wrap input');
+
+  let dateStr = '—';
+  if (dateEl && dateEl.value) {
+    const d = new Date(dateEl.value);
+    const days = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+    dateStr = `${days[d.getDay()]}, ${d.getDate()} tháng ${d.getMonth()+1}, ${d.getFullYear()}`;
+  }
+  const timeStr = timeSlot ? timeSlot.textContent.trim() : '';
+  const locStr = locEl ? locEl.value : '—';
+
+  state.lastSuccess = {
+    service: serviceName,
+    datetime: dateStr + (timeStr ? ' | ' + timeStr : ''),
+    location: locStr,
+    subtitle: serviceName + ' đã được đặt lịch'
+  };
+
+  goTo('genericsuccess');
 }
 
 /* ===== INIT ===== */
