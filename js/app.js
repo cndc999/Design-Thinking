@@ -14,6 +14,8 @@ function bindScreenEvents(screen) {
     case 'editpet': bindEditPetEvents(); break;
     case 'community': bindCommunityEvents(); break;
     case 'createpost': bindCreatePostEvents(); break;
+    case 'shop': bindShopEvents(); break;
+    case 'cartview': bindCartEvents(); break;
   }
 }
 
@@ -390,7 +392,7 @@ function handleCreatePost() {
   const pet = state.pets.find(p => p.id === state.newPost.petId) || state.pets[0];
   const newPost = {
     id: Date.now(),
-    userId: 'me', userName: 'Bạn', userAvatar: 'ME',
+    userId: 'me', userName: state.user.name, userAvatar: state.user.avatar || state.user.initials,
     petName: pet.name, petBreed: pet.breed,
     content: content,
     img: state.newPost.photo || pet.img,
@@ -428,6 +430,109 @@ function handleServiceSuccess(serviceName, serviceType) {
   };
 
   goTo('genericsuccess');
+}
+
+/* ===== SHOP EVENTS ===== */
+function bindShopEvents() {
+  // Category tabs
+  document.querySelectorAll('.shop-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      state.selectedShopCat = tab.dataset.cat;
+      goTo('shop');
+    });
+  });
+
+  // Add to cart
+  document.querySelectorAll('.product-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      state.cart.push({ id, qty: 1 });
+      goTo('shop');
+      showToast('Đã thêm vào giỏ hàng');
+    });
+  });
+
+  // Qty buttons
+  document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const action = btn.dataset.action;
+      const item = state.cart.find(c => c.id === id);
+      if (!item) return;
+      if (action === 'plus') item.qty++;
+      if (action === 'minus') {
+        item.qty--;
+        if (item.qty <= 0) state.cart = state.cart.filter(c => c.id !== id);
+      }
+      goTo('shop');
+    });
+  });
+
+  // Search
+  const searchInput = document.getElementById('shop-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase();
+      document.querySelectorAll('.product-card').forEach(card => {
+        const name = card.querySelector('.product-name').textContent.toLowerCase();
+        card.style.display = name.includes(q) ? '' : 'none';
+      });
+    });
+  }
+}
+
+function bindCartEvents() {
+  // Qty buttons
+  document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const action = btn.dataset.action;
+      const item = state.cart.find(c => c.id === id);
+      if (!item) return;
+      if (action === 'plus') item.qty++;
+      if (action === 'minus') {
+        item.qty--;
+        if (item.qty <= 0) state.cart = state.cart.filter(c => c.id !== id);
+      }
+      goTo('cartview');
+    });
+  });
+
+  // Remove
+  document.querySelectorAll('.cart-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      state.cart = state.cart.filter(c => c.id !== id);
+      goTo('cartview');
+      showToast('Đã xóa khỏi giỏ hàng');
+    });
+  });
+
+  // Payment options
+  document.querySelectorAll('.payment-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.payment-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+}
+
+function handlePlaceOrder() {
+  const address = document.getElementById('delivery-address').value.trim();
+  if (!address) { showToast('Vui lòng nhập địa chỉ giao hàng'); return; }
+
+  const total = state.cart.reduce((sum, c) => {
+    const p = state.shopProducts.find(x => x.id === c.id);
+    return sum + (p ? p.price * c.qty : 0);
+  }, 0) + 30000;
+
+  state.lastOrder = {
+    total: total,
+    itemCount: state.cart.reduce((sum, c) => sum + c.qty, 0),
+    address: address
+  };
+  state.cart = [];
+  goTo('ordersuccess');
 }
 
 /* ===== INIT ===== */

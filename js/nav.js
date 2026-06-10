@@ -45,7 +45,7 @@ function renderTopnav(screen) {
   const nav = document.getElementById('topnav-container');
 
   // Screens that use success header (no topnav)
-  if (screen === 'success' || screen === 'genericsuccess') {
+  if (screen === 'success' || screen === 'genericsuccess' || screen === 'ordersuccess') {
     nav.innerHTML = '';
     return;
   }
@@ -60,7 +60,11 @@ function renderTopnav(screen) {
       <button class="topnav-btn-icon" onclick="goHome()" title="Trang chủ">${ICONS.home}</button>
     `;
   } else {
-    left = `<div class="topnav-avatar">QA</div>`;
+    left = `<div class="topnav-avatar" onclick="changeAvatar()" title="Đổi ảnh đại diện">
+      ${state.user.avatar
+        ? '<img src="'+state.user.avatar+'" alt="Avatar">'
+        : state.user.initials}
+    </div>`;
   }
 
   let right = '';
@@ -86,4 +90,29 @@ function showToast(msg) {
   t.classList.add('show');
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ===== CHANGE AVATAR ===== */
+function changeAvatar() {
+  let input = document.getElementById('avatar-input');
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = 'avatar-input';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    input.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        state.user.avatar = ev.target.result;
+        renderTopnav(state.currentScreen);
+        showToast('Đã cập nhật ảnh đại diện!');
+      };
+      reader.readAsDataURL(file);
+    });
+    document.body.appendChild(input);
+  }
+  input.click();
 }

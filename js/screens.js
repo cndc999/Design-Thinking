@@ -21,6 +21,9 @@ function getScreenHTML(screen) {
     case 'community': return screenCommunity();
     case 'createpost': return screenCreatePost();
     case 'genericsuccess': return screenGenericSuccess();
+    case 'shop': return screenShop();
+    case 'cartview': return screenCart();
+    case 'ordersuccess': return screenOrderSuccess();
     default: return screenIntro();
   }
 }
@@ -233,6 +236,16 @@ function screenHome() {
           <span class="reminder-chip">2:30 chiều</span>
           <span class="reminder-chip">Happy Paws Clinic</span>
         </div>
+      </div>
+
+      <!-- Shop card -->
+      <div class="shop-banner" onclick="goTo('shop')">
+        <span class="shop-banner-icon">${ICONS.cart}</span>
+        <div class="shop-banner-text">
+          <div class="shop-banner-title">Cửa hàng thú cưng</div>
+          <div class="shop-banner-sub">Thức ăn, đồ chơi, phụ kiện & hơn thế</div>
+        </div>
+        <span class="shop-banner-arrow">${ICONS.back}</span>
       </div>
 
       <!-- Community -->
@@ -875,7 +888,11 @@ function screenCommunity() {
   const postCards = state.posts.map(p => `
     <div class="post-card">
       <div class="post-header">
-        <div class="post-user-avatar">${p.userAvatar}</div>
+        <div class="post-user-avatar">
+          ${p.userAvatar && p.userAvatar.startsWith('data:') || p.userAvatar && p.userAvatar.startsWith('http') || p.userAvatar && p.userAvatar.startsWith('img/')
+            ? '<img src="'+p.userAvatar+'" alt="">'
+            : (p.userAvatar || '?')}
+        </div>
         <div class="post-user-info">
           <div class="post-user-name">${p.userName}</div>
           <div class="post-time">${p.time}</div>
@@ -985,6 +1002,209 @@ function screenGenericSuccess() {
     <div class="screen-content" style="padding-top:20px">
       <div class="booking-summary">${summaryRows}</div>
       <button class="btn-secondary" onclick="goTo('schedule')">Xem lịch hẹn</button>
+      <button class="btn-ghost" onclick="goHome()">Về màn hình chính</button>
+    </div>
+  `;
+}
+
+/* ===== SHOP ===== */
+function screenShop() {
+  const catTabs = [
+    { id: 'all', name: 'Tất cả' },
+    ...state.shopCategories
+  ].map(c => `
+    <button class="shop-tab ${state.selectedShopCat===c.id?'active':'inactive'}" data-cat="${c.id}">
+      ${c.icon||''} ${c.name}
+    </button>
+  `).join('');
+
+  const filtered = state.selectedShopCat === 'all'
+    ? state.shopProducts
+    : state.shopProducts.filter(p => p.cat === state.selectedShopCat);
+
+  const products = filtered.map(p => {
+    const inCart = state.cart.find(c => c.id === p.id);
+    return `
+      <div class="product-card">
+        <div class="product-img"><img src="${p.img}" alt="${p.name}"></div>
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          <div class="product-desc">${p.desc}</div>
+          <div class="product-meta">
+            <span class="product-rating">${ICONS.star} ${p.rating}</span>
+            <span class="product-sold">Đã bán ${p.sold}</span>
+          </div>
+          <div class="product-bottom">
+            <div class="product-price">${p.price.toLocaleString('vi-VN')}đ</div>
+            ${inCart
+              ? `<div class="product-qty-ctrl">
+                  <button class="qty-btn" data-id="${p.id}" data-action="minus">${ICONS.minus}</button>
+                  <span class="qty-num">${inCart.qty}</span>
+                  <button class="qty-btn" data-id="${p.id}" data-action="plus">${ICONS.plus}</button>
+                </div>`
+              : `<button class="product-add-btn" data-id="${p.id}">+ Thêm</button>`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const cartCount = state.cart.reduce((sum, c) => sum + c.qty, 0);
+
+  return `
+    <div class="screen-content">
+      <div class="shop-header">
+        <h1 class="page-title">Cửa hàng</h1>
+        <button class="cart-badge-btn" onclick="goTo('cartview')">
+          ${ICONS.cart}
+          ${cartCount > 0 ? `<span class="cart-count">${cartCount}</span>` : ''}
+        </button>
+      </div>
+      <p class="page-subtitle">Vật phẩm chăm sóc thú cưng</p>
+
+      <div class="shop-tabs" id="shop-tabs">${catTabs}</div>
+
+      <div class="search-bar" style="margin-bottom:14px">
+        ${ICONS.search}
+        <input type="text" id="shop-search" placeholder="Tìm sản phẩm...">
+      </div>
+
+      <div id="product-list">${products}</div>
+    </div>
+  `;
+}
+
+/* ===== CART ===== */
+function screenCart() {
+  if (state.cart.length === 0) {
+    return `
+      <div class="screen-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">${ICONS.cart}</div>
+        <h2 style="margin-bottom:8px">Giỏ hàng trống</h2>
+        <p class="page-subtitle">Hãy thêm sản phẩm từ cửa hàng</p>
+        <button class="btn-primary" style="margin-top:16px" onclick="goTo('shop')">Đến cửa hàng</button>
+      </div>
+    `;
+  }
+
+  const items = state.cart.map(c => {
+    const p = state.shopProducts.find(x => x.id === c.id);
+    if (!p) return '';
+    const subtotal = p.price * c.qty;
+    return `
+      <div class="cart-item">
+        <div class="cart-item-img"><img src="${p.img}" alt="${p.name}"></div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${p.name}</div>
+          <div class="cart-item-price">${p.price.toLocaleString('vi-VN')}đ</div>
+          <div class="product-qty-ctrl">
+            <button class="qty-btn" data-id="${p.id}" data-action="minus">${ICONS.minus}</button>
+            <span class="qty-num">${c.qty}</span>
+            <button class="qty-btn" data-id="${p.id}" data-action="plus">${ICONS.plus}</button>
+          </div>
+        </div>
+        <div class="cart-item-subtotal">${subtotal.toLocaleString('vi-VN')}đ</div>
+        <button class="cart-remove" data-id="${p.id}" data-action="remove">${ICONS.trash}</button>
+      </div>
+    `;
+  }).join('');
+
+  const total = state.cart.reduce((sum, c) => {
+    const p = state.shopProducts.find(x => x.id === c.id);
+    return sum + (p ? p.price * c.qty : 0);
+  }, 0);
+
+  return `
+    <div class="screen-content">
+      <h1 class="page-title">Giỏ hàng</h1>
+      <p class="page-subtitle">${state.cart.length} sản phẩm</p>
+
+      <div id="cart-items">${items}</div>
+
+      <div class="cart-divider"></div>
+
+      <div class="cart-summary">
+        <div class="cart-summary-row">
+          <span>Tạm tính</span>
+          <span>${total.toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div class="cart-summary-row">
+          <span>Phí vận chuyển</span>
+          <span>30.000đ</span>
+        </div>
+        <div class="cart-summary-row total">
+          <span>Tổng cộng</span>
+          <span>${(total + 30000).toLocaleString('vi-VN')}đ</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Địa chỉ giao hàng</label>
+        <div class="location-wrap">
+          <input type="text" class="form-input" id="delivery-address" placeholder="Nhập địa chỉ..." value="">
+          <span class="suffix">${ICONS.pin}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Phương thức thanh toán</label>
+        <div class="payment-options" id="payment-options">
+          <div class="payment-opt selected" data-method="cod">Thanh toán khi nhận hàng (COD)</div>
+          <div class="payment-opt" data-method="bank">Chuyển khoản ngân hàng</div>
+          <div class="payment-opt" data-method="ewallet">Ví điện tử (MoMo/ZaloPay)</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="handlePlaceOrder()">Đặt hàng — ${(total + 30000).toLocaleString('vi-VN')}đ</button>
+      <button class="btn-ghost" onclick="goTo('shop')">Tiếp tục mua sắm</button>
+    </div>
+  `;
+}
+
+/* ===== ORDER SUCCESS ===== */
+function screenOrderSuccess() {
+  const total = state.lastOrder ? state.lastOrder.total : 0;
+  const itemCount = state.lastOrder ? state.lastOrder.itemCount : 0;
+
+  return `
+    <div class="success-header">
+      <div class="success-check">${ICONS.check}</div>
+      <h2 class="success-title">Đặt hàng thành công!</h2>
+      <p class="success-sub">Đơn hàng của bạn đang được xử lý</p>
+    </div>
+    <div class="screen-content" style="padding-top:20px">
+      <div class="booking-summary">
+        <div class="summary-row">
+          ${ICONS.box}
+          <div>
+            <div class="summary-label">Đơn hàng</div>
+            <div class="summary-value">${itemCount} sản phẩm</div>
+          </div>
+        </div>
+        <div class="summary-row">
+          ${ICONS.cart}
+          <div>
+            <div class="summary-label">Tổng tiền</div>
+            <div class="summary-value">${total.toLocaleString('vi-VN')}đ</div>
+          </div>
+        </div>
+        <div class="summary-row">
+          ${ICONS.pin}
+          <div>
+            <div class="summary-label">Giao đến</div>
+            <div class="summary-value">${state.lastOrder ? state.lastOrder.address : '—'}</div>
+          </div>
+        </div>
+        <div class="summary-row">
+          ${ICONS.calendar}
+          <div>
+            <div class="summary-label">Dự kiến giao</div>
+            <div class="summary-value">2–3 ngày</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="goTo('shop')">Tiếp tục mua sắm</button>
       <button class="btn-ghost" onclick="goHome()">Về màn hình chính</button>
     </div>
   `;

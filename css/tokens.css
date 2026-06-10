@@ -27,7 +27,7 @@
 * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
 html { font-size:16px; }
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
   background: linear-gradient(135deg, #E8E0DC, #D5C8C2);
   display: flex; justify-content: center; align-items: center;
   min-height: 100vh; padding: 20px; color: var(--text-dark);

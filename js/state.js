@@ -21,6 +21,10 @@ const ICONS = {
   image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
   heartFill: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>',
 };
 
 /* ===== BREED DATA với ảnh thật ===== */
@@ -60,6 +64,12 @@ const state = {
   currentScreen: 'intro',
   navHistory: ['intro'],
 
+  user: {
+    name: 'G2',
+    initials: 'G2',
+    avatar: null  // null = hiện chữ, có URL = hiện ảnh
+  },
+
   pets: [
     { id: 1, name: 'Luna', breed: 'Golden Retriever', type: 'dog', gender: 'female', age: 3,
       weight: 28, birthday: '2021-03-15', status: 'healthy', statusLabel: 'Sức Khoẻ Tuyệt Vời',
@@ -93,13 +103,13 @@ const state = {
       petName: 'Luna', petBreed: 'Golden Retriever',
       content: 'Hí anh em',
       img: 'img/post/post1.jpg',
-      likes: 36, comments: 5, liked: false,
-      time: '18 giờ trước'
+      likes: 24, comments: 5, liked: false,
+      time: '2 giờ trước'
     },
     {
       id: 2, userId: 'user2', userName: 'Thế Anh', userAvatar: 'TA',
       petName: 'Bam', petBreed: 'Pomeranian',
-      content: 'Bam đi tiêm phòng hôm nay',
+      content: 'Bam hôm nay đi tiêm',
       img: 'img/post/post2.webp',
       likes: 18, comments: 3, liked: false,
       time: '5 giờ trước'
@@ -107,13 +117,36 @@ const state = {
     {
       id: 3, userId: 'user3', userName: 'Tuấn Tú', userAvatar: 'Duck',
       petName: 'Bão', petBreed: 'British Shorthair',
-      content: 'Mèo nhà mình lười quá, cả ngày chỉ nằm ngủ thôi,',
+      content: 'Mèo nhà mình lười quá, cả ngày chỉ nằm ngủ thôi. ',
       img: 'img/post/post3.webp',
       likes: 42, comments: 12, liked: false,
       time: 'Hôm qua'
     },
-      
+    
   ],
  
-  newPost: { content: '', petId: null, photo: null }
+  newPost: { content: '', petId: null, photo: null },
+
+  /* ===== SHOP ===== */
+  shopCategories: [
+    { id: 'food', name: 'Thức ăn'},
+    { id: 'toy', name: 'Đồ chơi'},
+    { id: 'care', name: 'Chăm sóc'},
+    { id: 'fashion', name: 'Thời trang'},
+    { id: 'bed', name: 'Nệm & Chuồng'},
+  ],
+  shopProducts: [
+    { id: 1, cat: 'food', name: 'Royal Canin — Chó trưởng thành', desc: 'Thức ăn hạt cao cấp 3kg', price: 385000, img: 'img/shop/id1.webp', rating: 4.8, sold: 234 },
+    { id: 2, cat: 'food', name: 'Whiskas — Mèo mọi lứa tuổi', desc: 'Thức ăn ướt vị cá ngừ 85g x 12', price: 120000, img: 'https://cdn.pixabay.com/photo/2017/11/09/21/41/cat-2934720_640.jpg', rating: 4.5, sold: 567 },
+    { id: 3, cat: 'food', name: 'Pedigree — Chó con', desc: 'Thức ăn hạt mềm 1.5kg', price: 165000, img: 'https://cdn.pixabay.com/photo/2020/06/27/17/28/dog-food-5346006_640.jpg', rating: 4.6, sold: 189 },
+    { id: 4, cat: 'toy', name: 'Bóng cao su siêu bền', desc: 'Đồ chơi gặm sạch răng, chống stress', price: 45000, img: 'https://cdn.pixabay.com/photo/2019/03/27/17/13/dog-toy-4085178_640.jpg', rating: 4.7, sold: 892 },
+    { id: 5, cat: 'toy', name: 'Cần câu lông vũ cho mèo', desc: 'Đồ chơi tương tác, có chuông', price: 35000, img: 'https://cdn.pixabay.com/photo/2019/03/27/17/13/dog-toy-4085178_640.jpg', rating: 4.4, sold: 1203 },
+    { id: 6, cat: 'care', name: 'Sữa tắm trị ve bọ chét', desc: 'Dành cho chó mèo, 500ml', price: 89000, img: 'https://cdn.pixabay.com/photo/2016/12/13/05/15/puppy-1903313_640.jpg', rating: 4.9, sold: 432 },
+    { id: 7, cat: 'care', name: 'Lược chải lông 2 mặt', desc: 'Inox chống gỉ, tay cầm êm', price: 55000, img: 'https://cdn.pixabay.com/photo/2016/12/13/05/15/puppy-1903313_640.jpg', rating: 4.3, sold: 678 },
+    { id: 8, cat: 'fashion', name: 'Áo hoodie cho chó', desc: 'Vải cotton, size S-XL', price: 75000, img: 'https://cdn.pixabay.com/photo/2019/07/30/05/53/dog-4372036_640.jpg', rating: 4.6, sold: 345 },
+    { id: 9, cat: 'bed', name: 'Nệm êm cho thú cưng', desc: 'Size M 60x50cm, lông cừu', price: 195000, img: 'https://cdn.pixabay.com/photo/2016/12/13/05/15/puppy-1903313_640.jpg', rating: 4.8, sold: 211 },
+    { id: 10, cat: 'care', name: 'Bộ cắt móng an toàn', desc: 'Kèm giũa móng, cho chó mèo', price: 65000, img: 'https://cdn.pixabay.com/photo/2016/12/13/05/15/puppy-1903313_640.jpg', rating: 4.5, sold: 556 },
+  ],
+  cart: [],
+  selectedShopCat: 'all',
 };
