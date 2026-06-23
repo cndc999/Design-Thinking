@@ -97,6 +97,15 @@ const state = {
     reminder: '1 ngày', note: ''
   },
 
+  /* ===== APPOINTMENTS (lịch hẹn thật, sẽ được thêm khi đặt lịch) ===== */
+  apptSeq: 4, // id tiếp theo sẽ là 5
+  appointments: [
+    { id: 1, petId: 1, pet: 'Luna',   breed: 'Golden Retriever',   type: 'Tiêm phòng — Dại (Rabies)',  dateISO: '2026-06-15', time: '9:00 sáng',  place: 'Phòng Khám Thú Y Yên Lãng', color: 'var(--primary)' },
+    { id: 2, petId: 1, pet: 'Luna',   breed: 'Golden Retriever',   type: 'Khám tổng quát',             dateISO: '2026-06-20', time: '2:30 chiều', place: 'Happy Paws Clinic',          color: 'var(--green)' },
+    { id: 3, petId: 2, pet: 'Max',    breed: 'French Bulldog',     type: 'Spa — Tắm & Cắt lông',       dateISO: '2026-06-22', time: '10:00 sáng', place: 'PetSpa Đống Đa',             color: '#8E24AA' },
+    { id: 4, petId: 3, pet: 'Oliver', breed: 'British Shorthair',  type: 'Tiêm phòng — Parvovirus',    dateISO: '2026-06-28', time: '3:00 chiều', place: 'Phòng Khám Thú Y Yên Lãng', color: 'var(--primary)' },
+  ],
+
   posts: [
     {
       id: 1, userId: 'user1', userName: 'Thanh Độ', userAvatar: 'PC',

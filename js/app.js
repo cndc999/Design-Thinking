@@ -1,3 +1,51 @@
+/* ===== APPOINTMENT HELPERS ===== */
+
+// '2026-06-15' -> '15 tháng 6, 2026'
+function formatViDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return `${d.getDate()} tháng ${d.getMonth() + 1}, ${d.getFullYear()}`;
+}
+
+// '14:30' -> '2:30 chiều'. Nếu đã là chuỗi tiếng Việt (có 'sáng/chiều...') thì giữ nguyên.
+function formatViTime(t) {
+  if (!t) return '';
+  if (/sáng|trưa|chiều|tối/i.test(t)) return t.trim();
+  const parts = t.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parts[1] != null ? parts[1] : '00';
+  if (isNaN(h)) return t;
+  const period = h < 12 ? 'sáng' : 'chiều';
+  let hh = h % 12; if (hh === 0) hh = 12;
+  return `${hh}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// Chọn màu theo loại dịch vụ
+function colorForService(type) {
+  const s = (type || '').toLowerCase();
+  if (s.includes('spa') || s.includes('tắm') || s.includes('cắt') || s.includes('lông')) return '#8E24AA';
+  if (s.includes('khám') || s.includes('kiểm tra') || s.includes('tổng quát')) return 'var(--green)';
+  return 'var(--primary)'; // tiêm phòng & mặc định
+}
+
+// Thêm 1 lịch hẹn mới vào state.appointments
+function addAppointment({ petId, type, dateISO, time, place, color }) {
+  const pet = state.pets.find(p => p.id === petId) || state.pets[0] || {};
+  state.apptSeq = (state.apptSeq || 0) + 1;
+  state.appointments.push({
+    id: state.apptSeq,
+    petId: pet.id,
+    pet: pet.name || '',
+    breed: pet.breed || '',
+    type: type || 'Lịch hẹn',
+    dateISO: dateISO || '',
+    time: formatViTime(time),
+    place: place || '',
+    color: color || colorForService(type),
+  });
+}
+
 /* ===== EVENT BINDING (gọi sau mỗi lần goTo) ===== */
 
 function bindScreenEvents(screen) {
@@ -183,6 +231,16 @@ function handleConfirmBooking() {
   state.booking.time = time || '09:00';
   state.booking.location = loc || 'Phòng Khám Thú Y Yên Lãng';
   state.booking.note = document.getElementById('booking-note').value;
+
+  // Lưu lịch hẹn mới vào danh sách
+  addAppointment({
+    petId: state.booking.petId,
+    type: 'Tiêm phòng — ' + state.booking.vaccine,
+    dateISO: state.booking.date,
+    time: state.booking.time,
+    place: state.booking.location,
+    color: 'var(--primary)',
+  });
 
   goTo('success');
 }
@@ -428,6 +486,16 @@ function handleServiceSuccess(serviceName, serviceType) {
     location: locStr,
     subtitle: serviceName + ' đã được đặt lịch'
   };
+
+  // Lưu lịch hẹn mới vào danh sách
+  addAppointment({
+    petId: state.booking.petId,
+    type: serviceName,
+    dateISO: dateEl ? dateEl.value : '',
+    time: timeStr,
+    place: locEl ? locEl.value : '',
+    color: colorForService(serviceType + ' ' + serviceName),
+  });
 
   goTo('genericsuccess');
 }

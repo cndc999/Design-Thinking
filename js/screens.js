@@ -178,7 +178,32 @@ function screenPetInfo() {
 }
 
 /* ===== 06: HOME ===== */
+
+// Lấy lịch hẹn gần nhất sắp tới (ưu tiên ngày >= hôm nay, nếu không có thì lấy gần nhất)
+function getUpcomingAppt() {
+  const list = (state.appointments || []).slice();
+  if (!list.length) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const byDate = (a, b) => new Date(a.dateISO || 0) - new Date(b.dateISO || 0);
+  const future = list.filter(a => a.dateISO && new Date(a.dateISO) >= today).sort(byDate);
+  if (future.length) return future[0];
+  return list.sort(byDate)[list.length - 1]; // không còn lịch tương lai -> lấy lịch mới nhất
+}
+
 function screenHome() {
+  const upcoming = getUpcomingAppt();
+  const reminderCard = upcoming ? `
+      <div class="reminder-card" onclick="goTo('schedule')">
+        <div class="reminder-tag">Nhắc nhở sắp tới</div>
+        <div class="reminder-title">${upcoming.type}</div>
+        <div class="reminder-pet">${upcoming.pet} — ${upcoming.breed}</div>
+        <div class="reminder-meta">
+          <span class="reminder-chip">${formatViDate(upcoming.dateISO)}</span>
+          <span class="reminder-chip">${upcoming.time}</span>
+          <span class="reminder-chip">${upcoming.place}</span>
+        </div>
+      </div>` : '';
+
   const petCards = state.pets.map(p => `
     <div class="pet-card">
       <div class="pet-avatar"><img src="${p.img}" alt="${p.name}"></div>
@@ -226,17 +251,8 @@ function screenHome() {
         </div>
       </div>
 
-      <!-- Reminder → mở lịch tổng hợp -->
-      <div class="reminder-card" onclick="goTo('schedule')">
-        <div class="reminder-tag">Nhắc nhở sắp tới</div>
-        <div class="reminder-title">Khám Sức Khỏe</div>
-        <div class="reminder-pet">Luna — Golden Retriever</div>
-        <div class="reminder-meta">
-          <span class="reminder-chip">15 tháng 6, 2026</span>
-          <span class="reminder-chip">2:30 chiều</span>
-          <span class="reminder-chip">Happy Paws Clinic</span>
-        </div>
-      </div>
+      <!-- Reminder → mở lịch tổng hợp (lấy lịch gần nhất sắp tới) -->
+      ${reminderCard}
 
       <!-- Shop card -->
       <div class="shop-banner" onclick="goTo('shop')">
@@ -420,36 +436,33 @@ function screenSuccess() {
 
 /* ===== SCHEDULE: Lịch tổng hợp ===== */
 function screenSchedule() {
-  // Dữ liệu mẫu lịch hẹn
-  const appointments = [
-    { pet: 'Luna', breed: 'Golden Retriever', type: 'Tiêm phòng — Dại (Rabies)', date: '15 tháng 6, 2026', time: '9:00 sáng', place: 'Phòng Khám Thú Y Yên Lãng', color: 'var(--primary)' },
-    { pet: 'Luna', breed: 'Golden Retriever', type: 'Khám tổng quát', date: '20 tháng 6, 2026', time: '2:30 chiều', place: 'Happy Paws Clinic', color: 'var(--green)' },
-    { pet: 'Max', breed: 'French Bulldog', type: 'Spa — Tắm & Cắt lông', date: '22 tháng 6, 2026', time: '10:00 sáng', place: 'PetSpa Đống Đa', color: '#8E24AA' },
-    { pet: 'Oliver', breed: 'British Shorthair', type: 'Tiêm phòng — Parvovirus', date: '28 tháng 6, 2026', time: '3:00 chiều', place: 'Phòng Khám Thú Y Yên Lãng', color: 'var(--primary)' },
-  ];
+  // Lấy từ danh sách lịch hẹn thật, sắp xếp theo ngày tăng dần
+  const appointments = (state.appointments || []).slice().sort((a, b) => {
+    return new Date(a.dateISO || 0) - new Date(b.dateISO || 0);
+  });
 
-  const petImg = (name) => {
-    const p = state.pets.find(x => x.name === name);
+  const petImg = (a) => {
+    const p = state.pets.find(x => x.id === a.petId) || state.pets.find(x => x.name === a.pet);
     return p ? p.img : '';
   };
 
-  const cards = appointments.map((a, i) => `
+  const cards = appointments.length ? appointments.map((a) => `
     <div class="schedule-card">
       <div class="schedule-color" style="background:${a.color}"></div>
       <div class="schedule-body">
         <div class="schedule-type">${a.type}</div>
         <div class="schedule-pet-row">
-          <div class="schedule-pet-avatar"><img src="${petImg(a.pet)}" alt="${a.pet}"></div>
+          <div class="schedule-pet-avatar"><img src="${petImg(a)}" alt="${a.pet}"></div>
           <span>${a.pet} — ${a.breed}</span>
         </div>
         <div class="schedule-meta">
-          <span>${a.date}</span>
+          <span>${formatViDate(a.dateISO)}</span>
           <span>${a.time}</span>
         </div>
         <div class="schedule-place">${a.place}</div>
       </div>
     </div>
-  `).join('');
+  `).join('') : '<p class="page-subtitle">Chưa có lịch hẹn nào.</p>';
 
   return `
     <div class="screen-content">
