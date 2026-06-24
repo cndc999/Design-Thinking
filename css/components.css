@@ -370,8 +370,9 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .rec-vaccines { margin-top: 12px; }
 .vac-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .vac-tag {
-  font-size: 11px; font-weight: 600; color: var(--primary);
-  background: var(--primary-bg); padding: 5px 12px; border-radius: 16px;
+  font-size: 11px; font-weight: 600; color: white;
+  background: var(--primary); padding: 6px 14px; border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(232,67,45,0.25);
 }
 
 .rec-list { display: flex; flex-direction: column; gap: 8px; }
