@@ -25,6 +25,8 @@ function getScreenHTML(screen) {
     case 'editpet': return screenEditPet();
     case 'petrecord': return screenPetRecord();
     case 'community': return screenCommunity();
+    case 'postdetail': return screenPostDetail();
+    case 'userprofile': return screenUserProfile();
     case 'createpost': return screenCreatePost();
     case 'genericsuccess': return screenGenericSuccess();
     case 'shop': return screenShop();
@@ -1222,19 +1224,33 @@ function screenEditPet() {
 }
 
 /* ===== COMMUNITY FEED ===== */
+/* ===== Helper: avatar (ảnh hoặc chữ viết tắt) ===== */
+function avatarHTML(av) {
+  const isImg = av && (av.startsWith('data:') || av.startsWith('http') || av.startsWith('img/'));
+  return isImg ? `<img src="${av}" alt="">` : (av || '?');
+}
+
 function screenCommunity() {
-  const postCards = state.posts.map(p => `
+  const postCards = state.posts.map(p => {
+    const cmts = p.commentList || [];
+    const canDelete = p.userId === 'me';
+    const preview = cmts.slice(0, 2).map(c => `
+      <div class="cmt-preview">
+        <span class="cmt-prev-name js-user" data-user-name="${c.userName}" data-user-avatar="${c.userAvatar}">${c.userName}</span>
+        <span class="cmt-prev-text">${c.text}</span>
+      </div>`).join('');
+    const moreLink = cmts.length > 2
+      ? `<div class="cmt-more" onclick="openPostDetail(${p.id})">Xem tất cả ${cmts.length} bình luận</div>` : '';
+
+    return `
     <div class="post-card">
       <div class="post-header">
-        <div class="post-user-avatar">
-          ${p.userAvatar && p.userAvatar.startsWith('data:') || p.userAvatar && p.userAvatar.startsWith('http') || p.userAvatar && p.userAvatar.startsWith('img/')
-            ? '<img src="'+p.userAvatar+'" alt="">'
-            : (p.userAvatar || '?')}
-        </div>
+        <div class="post-user-avatar js-user" data-user-name="${p.userName}" data-user-avatar="${p.userAvatar}">${avatarHTML(p.userAvatar)}</div>
         <div class="post-user-info">
-          <div class="post-user-name">${p.userName}</div>
+          <div class="post-user-name js-user" data-user-name="${p.userName}" data-user-avatar="${p.userAvatar}">${p.userName}</div>
           <div class="post-time">${p.time}</div>
         </div>
+        ${canDelete ? `<button class="post-del-btn" data-post-id="${p.id}" data-action="delete" title="Xoá bài">${ICONS.trash}</button>` : ''}
       </div>
       <div class="post-pet-tag">${p.petName} — ${p.petBreed}</div>
       <div class="post-content">${p.content}</div>
@@ -1246,14 +1262,15 @@ function screenCommunity() {
         </button>
         <button class="post-action-btn" data-post-id="${p.id}" data-action="comment">
           <span class="post-action-icon">${ICONS.comment}</span>
-          <span>${p.comments}</span>
+          <span>${cmts.length}</span>
         </button>
         <button class="post-action-btn" data-post-id="${p.id}" data-action="share">
           <span class="post-action-icon">${ICONS.send}</span>
         </button>
       </div>
-    </div>
-  `).join('');
+      ${preview || moreLink ? `<div class="post-comments-preview">${preview}${moreLink}</div>` : ''}
+    </div>`;
+  }).join('');
 
   return `
     <div class="screen-content">
@@ -1264,6 +1281,95 @@ function screenCommunity() {
       <p class="page-subtitle">Chia sẻ khoảnh khắc với thú cưng</p>
 
       <div id="post-feed">${postCards}</div>
+    </div>
+  `;
+}
+
+/* ===== POST DETAIL: bài + toàn bộ bình luận + thêm bình luận ===== */
+function screenPostDetail() {
+  const p = state.posts.find(x => x.id === state.viewPostId);
+  if (!p) return screenCommunity();
+  const cmts = p.commentList || [];
+
+  const commentItems = cmts.length ? cmts.map(c => `
+    <div class="cmt-item">
+      <div class="cmt-avatar js-user" data-user-name="${c.userName}" data-user-avatar="${c.userAvatar}">${avatarHTML(c.userAvatar)}</div>
+      <div class="cmt-body">
+        <div class="cmt-bubble">
+          <div class="cmt-name js-user" data-user-name="${c.userName}" data-user-avatar="${c.userAvatar}">${c.userName}</div>
+          <div class="cmt-text">${c.text}</div>
+        </div>
+        <div class="cmt-time">${c.time}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="rec-empty">Chưa có bình luận. Hãy là người đầu tiên!</div>';
+
+  return `
+    <div class="screen-content" style="padding-bottom:84px">
+      <div class="post-card" style="margin-bottom:14px">
+        <div class="post-header">
+          <div class="post-user-avatar js-user" data-user-name="${p.userName}" data-user-avatar="${p.userAvatar}">${avatarHTML(p.userAvatar)}</div>
+          <div class="post-user-info">
+            <div class="post-user-name js-user" data-user-name="${p.userName}" data-user-avatar="${p.userAvatar}">${p.userName}</div>
+            <div class="post-time">${p.time}</div>
+          </div>
+          ${p.userId === 'me' ? `<button class="post-del-btn" data-post-id="${p.id}" data-action="delete" title="Xoá bài">${ICONS.trash}</button>` : ''}
+        </div>
+        <div class="post-pet-tag">${p.petName} — ${p.petBreed}</div>
+        <div class="post-content">${p.content}</div>
+        ${p.img ? `<div class="post-image"><img src="${p.img}" alt="Post"></div>` : ''}
+        <div class="post-actions">
+          <button class="post-action-btn ${p.liked?'liked':''}" data-post-id="${p.id}" data-action="like">
+            <span class="post-action-icon">${p.liked ? ICONS.heartFill : ICONS.heart}</span>
+            <span>${p.likes}</span>
+          </button>
+          <div class="post-action-btn"><span class="post-action-icon">${ICONS.comment}</span><span>${cmts.length}</span></div>
+        </div>
+      </div>
+
+      <div class="section-hdr"><span class="sec-title">Bình luận (${cmts.length})</span></div>
+      <div class="cmt-list">${commentItems}</div>
+
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+
+    <div class="cmt-input-bar">
+      <input type="text" id="cmt-input" class="cmt-input" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')submitComment(${p.id})">
+      <button class="cmt-send" onclick="submitComment(${p.id})">${ICONS.send}</button>
+    </div>
+  `;
+}
+
+/* ===== USER PROFILE: xem trang cá nhân người dùng ===== */
+function screenUserProfile() {
+  const u = state.viewUser;
+  if (!u) return screenCommunity();
+  const userPosts = state.posts.filter(p => p.userName === u.name);
+  const totalLikes = userPosts.reduce((s, p) => s + (p.likes || 0), 0);
+
+  const postItems = userPosts.length ? userPosts.map(p => `
+    <div class="post-card" onclick="openPostDetail(${p.id})" style="cursor:pointer">
+      <div class="post-pet-tag">${p.petName} — ${p.petBreed}</div>
+      <div class="post-content">${p.content}</div>
+      ${p.img ? `<div class="post-image"><img src="${p.img}" alt="Post"></div>` : ''}
+      <div class="post-meta-row">${ICONS.heart} ${p.likes} · ${ICONS.comment} ${(p.commentList||[]).length}</div>
+    </div>
+  `).join('') : '<div class="rec-empty">Người dùng này chưa có bài đăng nào.</div>';
+
+  return `
+    <div class="screen-content">
+      <div class="profile-head">
+        <div class="profile-avatar">${avatarHTML(u.avatar)}</div>
+        <div class="profile-name">${u.name}</div>
+        <div class="profile-stats">
+          <div class="pf-stat"><div class="pf-num">${userPosts.length}</div><div class="pf-lbl">Bài đăng</div></div>
+          <div class="pf-stat"><div class="pf-num">${totalLikes}</div><div class="pf-lbl">Lượt thích</div></div>
+        </div>
+      </div>
+
+      <div class="section-hdr" style="margin-top:6px"><span class="sec-title">Bài đăng</span></div>
+      ${postItems}
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
 }

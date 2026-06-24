@@ -442,3 +442,83 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .selected-venue .sv-ic svg { width: 16px; height: 16px; }
 .selected-venue .sv-name { font-size: 13px; font-weight: 700; color: var(--text-dark); }
 .selected-venue .sv-addr { font-size: 11px; color: var(--text-soft); margin-top: 1px; }
+
+/* ===== COMMUNITY: clickable user, delete, comments ===== */
+.js-user { cursor: pointer; }
+.post-user-name.js-user:hover { text-decoration: underline; }
+
+.post-header { position: relative; }
+.post-del-btn {
+  margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-soft); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.post-del-btn:hover { background: var(--primary-bg); color: var(--primary); }
+.post-del-btn svg { width: 16px; height: 16px; }
+
+/* preview bình luận dưới bài (feed) */
+.post-comments-preview { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+.cmt-preview { font-size: 12px; margin-bottom: 4px; line-height: 1.4; }
+.cmt-prev-name { font-weight: 700; color: var(--text-dark); margin-right: 6px; }
+.cmt-prev-text { color: var(--text-mid); }
+.cmt-more { font-size: 12px; color: var(--text-soft); cursor: pointer; font-weight: 600; margin-top: 4px; }
+.cmt-more:hover { color: var(--primary); }
+
+/* danh sách bình luận (post detail) */
+.cmt-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.cmt-item { display: flex; gap: 10px; }
+.cmt-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+  background: linear-gradient(135deg, #F5A999, #E8432D);
+  color: white; font-weight: 700; font-size: 12px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cmt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cmt-body { flex: 1; min-width: 0; }
+.cmt-bubble { background: white; border-radius: 14px; padding: 8px 12px; box-shadow: var(--shadow-sm); }
+.cmt-name { font-size: 12px; font-weight: 700; color: var(--text-dark); cursor: pointer; }
+.cmt-name:hover { text-decoration: underline; }
+.cmt-text { font-size: 13px; color: var(--text-mid); margin-top: 2px; line-height: 1.4; }
+.cmt-time { font-size: 10px; color: var(--text-light); margin: 4px 0 0 12px; }
+
+/* thanh nhập bình luận */
+.cmt-input-bar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; background: white; border-top: 1px solid var(--border);
+}
+.cmt-input {
+  flex: 1; padding: 10px 14px; border: 1.5px solid transparent;
+  border-radius: 22px; background: var(--bg-cream); font-size: 13px;
+  color: var(--text-dark); outline: none; transition: border-color 0.2s;
+}
+.cmt-input:focus { border-color: var(--primary); }
+.cmt-send {
+  width: 38px; height: 38px; border-radius: 50%; border: none; flex-shrink: 0;
+  background: var(--primary); color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cmt-send svg { width: 17px; height: 17px; }
+
+/* ===== USER PROFILE ===== */
+.profile-head {
+  display: flex; flex-direction: column; align-items: center;
+  background: white; border-radius: var(--radius-md); padding: 20px;
+  margin-bottom: 16px; box-shadow: var(--shadow-sm);
+}
+.profile-avatar {
+  width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(135deg, #F5A999, #E8432D);
+  color: white; font-weight: 700; font-size: 26px;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-name { font-size: 18px; font-weight: 800; color: var(--text-dark); }
+.profile-stats { display: flex; gap: 32px; margin-top: 14px; }
+.pf-stat { text-align: center; }
+.pf-num { font-size: 18px; font-weight: 800; color: var(--primary); }
+.pf-lbl { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+.post-meta-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-soft); margin-top: 8px;
+}
+.post-meta-row svg { width: 14px; height: 14px; }

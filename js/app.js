@@ -258,6 +258,8 @@ function bindScreenEvents(screen) {
     case 'bath': bindServiceScreen('bath-pet-list', 'bath-pkg', 'bath-time', 'bath-salon-list', 'salonId', () => updateServicePrices('bath')); break;
     case 'editpet': bindEditPetEvents(); break;
     case 'community': bindCommunityEvents(); break;
+    case 'postdetail': bindPostDetailEvents(); break;
+    case 'userprofile': bindUserLinks(); break;
     case 'createpost': bindCreatePostEvents(); break;
     case 'shop': bindShopEvents(); break;
     case 'cartview': bindCartEvents(); break;
@@ -612,8 +614,9 @@ function handleSaveEdit() {
 
 /* ===== COMMUNITY EVENTS ===== */
 function bindCommunityEvents() {
-  document.querySelectorAll('.post-action-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll('.post-action-btn, .post-del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const postId = parseInt(btn.dataset.postId);
       const action = btn.dataset.action;
       const post = state.posts.find(p => p.id === postId);
@@ -622,14 +625,91 @@ function bindCommunityEvents() {
       if (action === 'like') {
         post.liked = !post.liked;
         post.likes += post.liked ? 1 : -1;
-        goTo('community'); // Re-render
+        goTo('community');
       } else if (action === 'comment') {
-        showToast('Bình luận — sắp ra mắt!');
+        openPostDetail(postId);
       } else if (action === 'share') {
         showToast('Đã chia sẻ!');
+      } else if (action === 'delete') {
+        deletePost(postId);
       }
     });
   });
+  bindUserLinks();
+}
+
+// Gắn click cho mọi tên/avatar người dùng -> mở profile
+function bindUserLinks() {
+  document.querySelectorAll('.js-user').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openUserProfile(el.dataset.userName, el.dataset.userAvatar);
+    });
+  });
+}
+
+function bindPostDetailEvents() {
+  document.querySelectorAll('.post-action-btn, .post-del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const postId = parseInt(btn.dataset.postId);
+      const action = btn.dataset.action;
+      const post = state.posts.find(p => p.id === postId);
+      if (!post) return;
+      if (action === 'like') {
+        post.liked = !post.liked;
+        post.likes += post.liked ? 1 : -1;
+        goTo('postdetail');
+      } else if (action === 'delete') {
+        deletePost(postId);
+      }
+    });
+  });
+  bindUserLinks();
+}
+
+// Mở trang cá nhân của 1 người dùng
+function openUserProfile(name, avatar) {
+  if (!name) return;
+  state.viewUser = { name, avatar };
+  goTo('userprofile');
+}
+
+// Mở chi tiết bài đăng (kèm bình luận)
+function openPostDetail(id) {
+  state.viewPostId = id;
+  goTo('postdetail');
+}
+
+// Xoá bài đăng của mình
+function deletePost(id) {
+  const post = state.posts.find(p => p.id === id);
+  if (!post) return;
+  if (!confirm('Bạn có chắc muốn xoá bài đăng này?')) return;
+  state.posts = state.posts.filter(p => p.id !== id);
+  showToast('Đã xoá bài đăng');
+  goTo('community');
+}
+
+// Gửi bình luận mới
+function submitComment(postId) {
+  const input = document.getElementById('cmt-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const post = state.posts.find(p => p.id === postId);
+  if (!post) return;
+  if (!post.commentList) post.commentList = [];
+  state.commentSeq = (state.commentSeq || 100) + 1;
+  post.commentList.push({
+    id: state.commentSeq,
+    userName: state.user.name,
+    userAvatar: state.user.avatar || state.user.initials,
+    text: text,
+    time: 'Vừa xong'
+  });
+  input.value = '';
+  goTo('postdetail');
 }
 
 function bindCreatePostEvents() {
@@ -671,7 +751,7 @@ function handleCreatePost() {
     petName: pet.name, petBreed: pet.breed,
     content: content,
     img: state.newPost.photo || pet.img,
-    likes: 0, comments: 0, liked: false,
+    likes: 0, liked: false, commentList: [],
     time: 'Vừa xong'
   };
   state.posts.unshift(newPost);

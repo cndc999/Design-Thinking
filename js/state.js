@@ -227,29 +227,65 @@ const state = {
       petName: 'Luna', petBreed: 'Golden Retriever',
       content: 'Hí anh em',
       img: 'img/post/post1.jpg',
-      likes: 24, comments: 5, liked: false,
-      time: '2 giờ trước'
+      likes: 24, liked: false, time: '2 giờ trước',
+      commentList: [
+        { id: 11, userName: 'Thế Anh',  userAvatar: 'TA', text: 'Bé xinh quá!', time: '1 giờ trước' },
+        { id: 12, userName: 'Minh Anh', userAvatar: 'MA', text: 'Lông mượt ghê, chăm kiểu gì vậy bạn?', time: '50 phút trước' },
+        { id: 13, userName: 'Tuấn Tú',  userAvatar: 'TT', text: 'Cho mình xin info chỗ cắt tỉa với', time: '30 phút trước' },
+      ]
     },
     {
       id: 2, userId: 'user2', userName: 'Thế Anh', userAvatar: 'TA',
       petName: 'Bam', petBreed: 'Pomeranian',
-      content: 'Bam hôm nay đi tiêm',
+      content: 'Bam hôm nay đi tiêm, ngoan lắm không khóc tí nào',
       img: 'img/post/post2.webp',
-      likes: 18, comments: 3, liked: false,
-      time: '5 giờ trước'
+      likes: 18, liked: false, time: '5 giờ trước',
+      commentList: [
+        { id: 21, userName: 'Thanh Độ', userAvatar: 'PC', text: 'Bé ngoan ghê', time: '4 giờ trước' },
+        { id: 22, userName: 'Hải Yến',  userAvatar: 'HY', text: 'Tiêm ở phòng khám nào vậy bạn?', time: '3 giờ trước' },
+      ]
     },
     {
-      id: 3, userId: 'user3', userName: 'Tuấn Tú', userAvatar: 'Duck',
+      id: 3, userId: 'user3', userName: 'Tuấn Tú', userAvatar: 'TT',
       petName: 'Bão', petBreed: 'British Shorthair',
-      content: 'Mèo nhà mình lười quá, cả ngày chỉ nằm ngủ thôi. ',
+      content: 'Mèo nhà mình lười quá, cả ngày chỉ nằm ngủ thôi.',
       img: 'img/post/post3.webp',
-      likes: 42, comments: 12, liked: false,
-      time: 'Hôm qua'
+      likes: 42, liked: false, time: 'Hôm qua',
+      commentList: [
+        { id: 31, userName: 'Ngọc Mai', userAvatar: 'NM', text: 'Mèo nào chẳng thế hihi', time: 'Hôm qua' },
+        { id: 32, userName: 'Bảo Nam',  userAvatar: 'BN', text: 'Đáng yêu quá đi', time: 'Hôm qua' },
+        { id: 33, userName: 'Thế Anh',  userAvatar: 'TA', text: 'Giống mèo nhà mình ghê', time: 'Hôm qua' },
+      ]
     },
-    
+    {
+      id: 4, userId: 'user4', userName: 'Phương Linh', userAvatar: 'PL',
+      petName: 'Kẹo', petBreed: 'Poodle',
+      content: 'Mới tắm cho Kẹo xong, thơm phức luôn nha cả nhà',
+      img: 'https://cdn.pixabay.com/photo/2016/02/19/11/19/dog-1209129_640.jpg',
+      likes: 31, liked: false, time: 'Hôm qua',
+      commentList: [
+        { id: 41, userName: 'Gia Bảo',  userAvatar: 'GB', text: 'Nhìn thơm thật sự', time: 'Hôm qua' },
+        { id: 42, userName: 'Khánh Vy', userAvatar: 'KV', text: 'Tắm ở tiệm nào vậy bạn?', time: 'Hôm qua' },
+      ]
+    },
+    {
+      id: 5, userId: 'user5', userName: 'Đức Huy', userAvatar: 'ĐH',
+      petName: 'Mỡ', petBreed: 'British Shorthair',
+      content: 'Hôm nay Mỡ tròn 1 tuổi! Chúc mừng sinh nhật con trai của mẹ',
+      img: 'https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_640.jpg',
+      likes: 56, liked: false, time: '2 ngày trước',
+      commentList: [
+        { id: 51, userName: 'Mỹ Duyên', userAvatar: 'MD', text: 'Chúc mừng sinh nhật Mỡ!', time: '2 ngày trước' },
+        { id: 52, userName: 'Anh Tú',   userAvatar: 'AT', text: 'Mau ăn chóng lớn nha bé', time: '2 ngày trước' },
+        { id: 53, userName: 'Thu Trang',userAvatar: 'TT', text: 'Cưng quá trời', time: '2 ngày trước' },
+      ]
+    },
   ],
- 
+
   newPost: { content: '', petId: null, photo: null },
+  viewPostId: null,   // bài đang xem chi tiết
+  viewUser: null,     // người đang xem profile { name, avatar }
+  commentSeq: 100,    // id bình luận tiếp theo
 
   /* ===== SHOP ===== */
   shopCategories: [
