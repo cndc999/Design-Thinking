@@ -840,7 +840,7 @@ function screenCheckup() {
       </div>
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá khám theo phòng khám & khung giờ</div>
+        <div class="ps-note">${ICONS.clock} Giá khám theo phòng khám & khung giờ — giờ sớm rẻ hơn</div>
         <div class="ps-total"><span>Tạm tính</span><span id="checkup-total" class="ps-amount">${formatVND(clinicPrice(state.checkupTypes[0].base))}</span></div>
       </div>
 
@@ -993,7 +993,7 @@ function screenGrooming() {
       ${selectedVenueHTML(state.salons.find(s => s.id === state.booking.salonId) || state.salons[0], 'Tiệm chăm sóc')}
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ</div>
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
         <div class="ps-total"><span>Tạm tính</span><span id="groom-total" class="ps-amount">—</span></div>
       </div>
 
@@ -1061,7 +1061,7 @@ function screenBath() {
       ${selectedVenueHTML(state.salons.find(s => s.id === state.booking.salonId) || state.salons[0], 'Tiệm chăm sóc')}
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ</div>
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
         <div class="ps-total"><span>Tạm tính</span><span id="bath-total" class="ps-amount">—</span></div>
       </div>
 
@@ -1076,10 +1076,10 @@ function screenPetRecord() {
   const pet = state.pets.find(p => p.id === state.viewPetId) || state.pets[0];
   if (!pet) return `<div class="screen-content"><p>Không tìm thấy thú cưng</p></div>`;
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  // Đồng bộ với màn Lịch hẹn: lấy mọi lịch hẹn của thú cưng này (sắp xếp theo ngày)
   const upcoming = (state.appointments || [])
-    .filter(a => a.petId === pet.id && a.dateISO && new Date(a.dateISO) >= today)
-    .sort((a, b) => new Date(a.dateISO) - new Date(b.dateISO));
+    .filter(a => a.petId === pet.id)
+    .sort((a, b) => new Date(a.dateISO || 0) - new Date(b.dateISO || 0));
   const history = (pet.history || []).slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
 
   const kindColor = (k) => k === 'vaccine' ? 'var(--primary)' : k === 'spa' ? '#8E24AA' : 'var(--green)';
@@ -1097,7 +1097,7 @@ function screenPetRecord() {
         <div class="rec-event-title">${a.type}</div>
         <div class="rec-event-meta">${formatViDate(a.dateISO)} · ${a.time} · ${a.place}</div>
       </div>
-    </div>`).join('') : '<div class="rec-empty">Chưa có lịch hẹn sắp tới</div>';
+    </div>`).join('') : '<div class="rec-empty">Chưa có lịch hẹn nào</div>';
 
   const historyHTML = history.length ? history.map(h => `
     <div class="rec-event">
@@ -1134,7 +1134,7 @@ function screenPetRecord() {
 
       ${vaccineTags ? `<div class="rec-vaccines"><div class="rii-label" style="margin-bottom:6px">Đã tiêm</div><div class="vac-row">${vaccineTags}</div></div>` : ''}
 
-      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Lịch hẹn sắp tới</span></div>
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Lịch hẹn</span></div>
       <div class="rec-list">${upcomingHTML}</div>
 
       <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Lịch sử khám & tiêm</span></div>
