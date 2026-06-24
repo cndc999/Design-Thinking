@@ -13,7 +13,9 @@ function getScreenHTML(screen) {
     case 'schedule': return screenSchedule();
     case 'clinic': return screenClinic();
     case 'clinics': return screenClinics();
+    case 'clinicdetail': return screenClinicDetail();
     case 'salons': return screenSalons();
+    case 'salondetail': return screenSalonDetail();
     case 'reviews': return screenReviews();
     case 'spa': return screenSpa();
     case 'checkup': return screenCheckup();
@@ -250,12 +252,12 @@ function screenHome() {
 
       <!-- 3 ô danh mục chính -->
       <div class="home-cats">
-        <div class="cat-box" onclick="goTo('clinic')">
+        <div class="cat-box" onclick="goTo('clinics')">
           <div class="cat-icon" style="background:var(--green-bg);color:var(--green)">${ICONS.calendar}</div>
           <div class="cat-title">Phòng khám</div>
           <div class="cat-sub">Khám · Tiêm · Thuốc</div>
         </div>
-        <div class="cat-box" onclick="goTo('spa')">
+        <div class="cat-box" onclick="goTo('salons')">
           <div class="cat-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.heart}</div>
           <div class="cat-title">Spa</div>
           <div class="cat-sub">Tắm · Cắt lông</div>
@@ -328,10 +330,13 @@ function screenBooking() {
   const pet = state.pets.find(p => p.id === state.booking.petId) || state.pets[0];
   const b = state.booking;
 
-  const vaccines = ['Dại (Rabies)','Parvovirus','Distemper','Leptospirosis','Khác'];
-  const vaccTags = vaccines.map(v =>
-    `<button class="tag ${b.vaccine===v?'active':'inactive'}" data-vaccine="${v}">${v}</button>`
-  ).join('');
+  const vaccTags = state.basicVaccines.map(v => {
+    const price = clinicPrice(v.base);
+    return `<button class="tag ${b.vaccine===v.name?'active':'inactive'}" data-vaccine="${v.name}" data-price="${price}">${v.name} · ${formatVND(price)}</button>`;
+  }).join('');
+
+  const selVacc = state.basicVaccines.find(v => v.name === b.vaccine) || state.basicVaccines[0];
+  const initVaccPrice = clinicPrice(selVacc ? selVacc.base : 0);
 
   const reminders = ['12 giờ','1 ngày','3 ngày'];
   const remTags = reminders.map(r =>
@@ -353,6 +358,10 @@ function screenBooking() {
         <div class="tag-row" id="vaccine-tags">${vaccTags}</div>
       </div>
 
+      <div class="price-summary">
+        <div class="ps-total"><span>Giá tiêm</span><span id="booking-vaccine-price" class="ps-amount">${formatVND(initVaccPrice)}</span></div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Ngày tiêm</label>
         <div class="date-wrap">
@@ -369,10 +378,7 @@ function screenBooking() {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Chọn phòng khám</label>
-        ${clinicPickerHTML(state.booking.clinicId, 'booking-clinic-list')}
-      </div>
+      ${selectedVenueHTML(state.clinics.find(c => c.id === state.booking.clinicId) || state.clinics[0], 'Phòng khám')}
 
       <div class="form-group">
         <label class="form-label">Nhắc trước</label>
@@ -408,6 +414,7 @@ function screenSuccess() {
   const rows = [
     { icon: ICONS.paw, label: 'Thú cưng', value: `${pet.name} | ${pet.breed}` },
     { icon: ICONS.syringe, label: 'Vắc xin', value: b.vaccine },
+    { icon: ICONS.star, label: 'Giá tiêm', value: b.vaccinePrice ? formatVND(b.vaccinePrice) : '—' },
     { icon: ICONS.calendar, label: 'Ngày & Giờ', value: `${dateStr} | ${timeStr}` },
     { icon: ICONS.pin, label: 'Địa điểm', value: b.location },
     { icon: ICONS.bell, label: 'Nhắc nhở', value: `Trước ${b.reminder}` },
@@ -582,10 +589,28 @@ function venuePickerHTML(venues, selectedId, listId) {
 function clinicPickerHTML(selectedId, listId) { return venuePickerHTML(state.clinics, selectedId, listId); }
 function salonPickerHTML(selectedId, listId) { return venuePickerHTML(state.salons, selectedId, listId); }
 
-/* ===== Helper: Venue list card (có nút xem đánh giá) ===== */
+/* ===== Helper: Hiển thị nơi đã chọn (read-only trong form) ===== */
+function selectedVenueHTML(venue, label) {
+  if (!venue) return '';
+  return `
+    <div class="form-group">
+      <label class="form-label">${label}</label>
+      <div class="selected-venue">
+        <div class="sv-ic">${ICONS.pin}</div>
+        <div class="sv-text">
+          <div class="sv-name">${venue.name}</div>
+          <div class="sv-addr">${venue.address}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ===== Helper: Venue list card (bấm vào để mở chi tiết) ===== */
 function venueListHTML(venues, type) {
+  const opener = type === 'salon' ? 'openSalonDetail' : 'openClinicDetail';
   return venues.map(v => `
-    <div class="clinic-item static">
+    <div class="clinic-item nav" onclick="${opener}(${v.id})">
+      <div class="clinic-thumb"><img src="${v.img}" alt="${v.name}" onerror="this.style.display='none'"></div>
       <div class="clinic-info">
         <div class="clinic-name">${v.name}</div>
         <div class="clinic-addr">${ICONS.pin}<span>${v.address}</span></div>
@@ -594,10 +619,93 @@ function venueListHTML(venues, type) {
           <span class="clinic-rate-num">${v.rating.toFixed(1)}</span>
           <span class="clinic-reviews">(${v.reviews} đánh giá)</span>
         </div>
-        <button class="review-link" onclick="openReviews('${type}', ${v.id})">${ICONS.comment} Xem đánh giá</button>
       </div>
+      <div class="clinic-arrow">${ICONS.back}</div>
     </div>
   `).join('');
+}
+
+/* ===== Helper: Cover ảnh cho trang chi tiết venue ===== */
+function venueCoverHTML(v, icon, grad) {
+  return `
+    <div class="venue-cover" style="background:${grad}">
+      <span class="venue-cover-ic">${icon}</span>
+      <img src="${v.img}" alt="${v.name}" onerror="this.style.display='none'">
+    </div>`;
+}
+
+/* ===== Helper: Thẻ dịch vụ trong trang chi tiết ===== */
+function serviceCardHTML(s) {
+  return `
+    <div class="service-card" onclick="goTo('${s.screen}')">
+      <div class="service-icon" style="background:${s.color};color:${s.iconColor}">${s.icon}</div>
+      <div class="service-info">
+        <div class="service-title">${s.title}</div>
+        <div class="service-sub">${s.sub}</div>
+      </div>
+      <div class="service-arrow">${ICONS.back}</div>
+    </div>`;
+}
+
+/* ===== CLINIC DETAIL: chi tiết phòng khám + dịch vụ ===== */
+function screenClinicDetail() {
+  const c = state.clinics.find(x => x.id === state.viewClinicId) || state.clinics[0];
+  if (!c) return screenClinics();
+
+  const services = [
+    { title: 'Tiêm phòng', sub: 'Đặt lịch tiêm vắc xin', icon: ICONS.syringe, color: 'var(--primary-bg)', iconColor: 'var(--primary)', screen: 'vaccineselect' },
+    { title: 'Khám tổng quát', sub: 'Khám sức khỏe định kỳ', icon: ICONS.shield, color: 'var(--green-bg)', iconColor: 'var(--green)', screen: 'checkup' },
+    { title: 'Mua thuốc', sub: 'Đặt mua thuốc theo đơn', icon: ICONS.plus, color: 'var(--orange-bg)', iconColor: 'var(--orange)', screen: 'medicine' },
+  ];
+
+  return `
+    <div class="screen-content">
+      ${venueCoverHTML(c, ICONS.shield, 'linear-gradient(135deg,#F5A999,#E8432D)')}
+      <h1 class="page-title">${c.name}</h1>
+      <div class="venue-rate-line">
+        <span class="clinic-stars">${starsHTML(c.rating)}</span>
+        <span class="clinic-rate-num">${c.rating.toFixed(1)}</span>
+        <span class="clinic-reviews">(${c.reviews} đánh giá)</span>
+      </div>
+      <div class="venue-addr-line">${ICONS.pin}<span>${c.address}</span></div>
+      <p class="venue-desc">${c.desc || ''}</p>
+      <button class="review-link" onclick="openReviews('clinic', ${c.id})">${ICONS.comment} Xem đánh giá</button>
+
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Dịch vụ tại đây</span></div>
+      ${services.map(serviceCardHTML).join('')}
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
+}
+
+/* ===== SALON DETAIL: chi tiết tiệm chăm sóc + dịch vụ ===== */
+function screenSalonDetail() {
+  const s = state.salons.find(x => x.id === state.viewSalonId) || state.salons[0];
+  if (!s) return screenSalons();
+
+  const services = [
+    { title: 'Cắt lông', sub: 'Tạo kiểu, tỉa lông chuyên nghiệp', icon: ICONS.edit, color: '#F3E5F5', iconColor: '#8E24AA', screen: 'grooming' },
+    { title: 'Tắm', sub: 'Tắm sạch, sấy khô, xịt thơm', icon: ICONS.heart, color: '#E3F2FD', iconColor: '#1565C0', screen: 'bath' },
+  ];
+
+  return `
+    <div class="screen-content">
+      ${venueCoverHTML(s, ICONS.heart, 'linear-gradient(135deg,#CE93D8,#8E24AA)')}
+      <h1 class="page-title">${s.name}</h1>
+      <div class="venue-rate-line">
+        <span class="clinic-stars">${starsHTML(s.rating)}</span>
+        <span class="clinic-rate-num">${s.rating.toFixed(1)}</span>
+        <span class="clinic-reviews">(${s.reviews} đánh giá)</span>
+      </div>
+      <div class="venue-addr-line">${ICONS.pin}<span>${s.address}</span></div>
+      <p class="venue-desc">${s.desc || ''}</p>
+      <button class="review-link" onclick="openReviews('salon', ${s.id})">${ICONS.comment} Xem đánh giá</button>
+
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Dịch vụ tại đây</span></div>
+      ${services.map(serviceCardHTML).join('')}
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
 }
 
 /* ===== Helper: Sinh review giả lập (ổn định theo id) ===== */
@@ -627,9 +735,8 @@ function screenClinics() {
   return `
     <div class="screen-content">
       <h1 class="page-title">Phòng khám gần bạn</h1>
-      <p class="page-subtitle">Chọn phòng khám uy tín cho thú cưng</p>
+      <p class="page-subtitle">Bấm vào phòng khám để xem chi tiết & đặt dịch vụ</p>
       ${venueListHTML(state.clinics, 'clinic')}
-      <button class="btn-primary" onclick="goTo('vaccineselect')" style="margin-top:12px">+ Đặt lịch tại phòng khám</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -640,9 +747,8 @@ function screenSalons() {
   return `
     <div class="screen-content">
       <h1 class="page-title">Tiệm chăm sóc gần bạn</h1>
-      <p class="page-subtitle">Spa, cắt lông & làm đẹp cho thú cưng</p>
+      <p class="page-subtitle">Bấm vào tiệm để xem chi tiết & đặt dịch vụ</p>
       ${venueListHTML(state.salons, 'salon')}
-      <button class="btn-primary" onclick="goTo('spa')" style="margin-top:12px">+ Đặt lịch chăm sóc</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -716,25 +822,26 @@ function screenCheckup() {
       <div class="form-group">
         <label class="form-label">Loại khám</label>
         <div class="option-grid" id="checkup-type">
-          <div class="option-card selected" data-value="basic">
-            <div class="option-icon" style="background:var(--green-bg);color:var(--green)">${ICONS.shield}</div>
-            <div class="option-name">Khám cơ bản</div>
-            <div class="option-desc">Kiểm tra tổng quát, đo nhiệt độ, cân nặng</div>
-            <div class="option-price">200.000đ</div>
-          </div>
-          <div class="option-card" data-value="full">
-            <div class="option-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.heart}</div>
-            <div class="option-name">Khám toàn diện</div>
-            <div class="option-desc">Xét nghiệm máu, siêu âm, X-quang</div>
-            <div class="option-price">500.000đ</div>
-          </div>
-          <div class="option-card" data-value="dental">
-            <div class="option-icon" style="background:#E3F2FD;color:#1565C0">${ICONS.check}</div>
-            <div class="option-name">Khám răng miệng</div>
-            <div class="option-desc">Kiểm tra, cạo vôi, đánh bóng răng</div>
-            <div class="option-price">350.000đ</div>
-          </div>
+          ${state.checkupTypes.map((t, i) => {
+            const colors = [
+              {bg:'var(--green-bg)', c:'var(--green)', ic: ICONS.shield},
+              {bg:'var(--primary-bg)', c:'var(--primary)', ic: ICONS.heart},
+              {bg:'#E3F2FD', c:'#1565C0', ic: ICONS.check},
+            ][i % 3];
+            return `
+          <div class="option-card ${i===0?'selected':''}" data-value="${t.value}">
+            <div class="option-icon" style="background:${colors.bg};color:${colors.c}">${colors.ic}</div>
+            <div class="option-name">${t.name}</div>
+            <div class="option-desc">${t.desc}</div>
+            <div class="option-price" data-base="${t.base}">${formatVND(clinicPrice(t.base))}</div>
+          </div>`;
+          }).join('')}
         </div>
+      </div>
+
+      <div class="price-summary">
+        <div class="ps-note">${ICONS.clock} Giá khám theo phòng khám & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-total"><span>Tạm tính</span><span id="checkup-total" class="ps-amount">${formatVND(clinicPrice(state.checkupTypes[0].base))}</span></div>
       </div>
 
       <div class="form-group">
@@ -757,10 +864,7 @@ function screenCheckup() {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Chọn phòng khám</label>
-        ${clinicPickerHTML(state.booking.clinicId, 'checkup-clinic-list')}
-      </div>
+      ${selectedVenueHTML(state.clinics.find(c => c.id === state.booking.clinicId) || state.clinics[0], 'Phòng khám')}
 
       <button class="btn-primary" onclick="handleServiceSuccess('Kiểm tra tổng quát','checkup')">Xác nhận đặt lịch</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
@@ -777,14 +881,6 @@ function screenMedicine() {
     { name: 'Da liễu', icon: ICONS.edit, color: '#F3E5F5', iconColor: '#8E24AA' },
   ];
 
-  const products = [
-    { name: 'Drontal Plus', desc: 'Tẩy giun cho chó — 1 viên/10kg', price: '85.000đ', stock: true },
-    { name: 'Vitamin B Complex', desc: 'Bổ sung vitamin nhóm B', price: '120.000đ', stock: true },
-    { name: 'Amoxicillin 250mg', desc: 'Kháng sinh — Cần đơn bác sĩ', price: '65.000đ', stock: true },
-    { name: 'Frontline Plus', desc: 'Trị ve, bọ chét — ống 1ml', price: '180.000đ', stock: true },
-    { name: 'Omega 3 Fish Oil', desc: 'Dầu cá bổ sung — 60 viên', price: '250.000đ', stock: false },
-  ];
-
   const catCards = categories.map(c => `
     <div class="med-cat-card">
       <div class="med-cat-icon" style="background:${c.color};color:${c.iconColor}">${c.icon}</div>
@@ -792,23 +888,26 @@ function screenMedicine() {
     </div>
   `).join('');
 
-  const prodCards = products.map(p => `
+  const prodCards = state.basicMedicines.map(p => {
+    const price = clinicPrice(p.base);
+    return `
     <div class="med-product-card">
       <div class="med-product-info">
         <div class="med-product-name">${p.name}</div>
         <div class="med-product-desc">${p.desc}</div>
-        <div class="med-product-price">${p.price}</div>
+        <div class="med-product-price">${formatVND(price)}</div>
       </div>
-      <button class="med-add-btn ${p.stock?'':'disabled'}" onclick="${p.stock ? "this.textContent='Đã thêm';this.classList.add('added');showToast('Đã thêm vào giỏ')" : ''}">
-        ${p.stock ? '+ Thêm' : 'Hết hàng'}
-      </button>
+      <button class="med-add-btn" onclick="this.textContent='Đã thêm';this.classList.add('added');showToast('Đã thêm vào giỏ')">+ Thêm</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <div class="screen-content">
       <h1 class="page-title">Mua thuốc</h1>
       <p class="page-subtitle">Đặt mua thuốc theo đơn hoặc không đơn</p>
+
+      ${selectedVenueHTML(state.clinics.find(c => c.id === state.booking.clinicId) || state.clinics[0], 'Phòng khám')}
 
       <div class="form-group">
         <label class="form-label">Chọn thú cưng</label>
@@ -891,13 +990,10 @@ function screenGrooming() {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Chọn tiệm chăm sóc</label>
-        ${salonPickerHTML(state.booking.salonId, 'groom-salon-list')}
-      </div>
+      ${selectedVenueHTML(state.salons.find(s => s.id === state.booking.salonId) || state.salons[0], 'Tiệm chăm sóc')}
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ</div>
         <div class="ps-total"><span>Tạm tính</span><span id="groom-total" class="ps-amount">—</span></div>
       </div>
 
@@ -962,13 +1058,10 @@ function screenBath() {
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Chọn tiệm chăm sóc</label>
-        ${salonPickerHTML(state.booking.salonId, 'bath-salon-list')}
-      </div>
+      ${selectedVenueHTML(state.salons.find(s => s.id === state.booking.salonId) || state.salons[0], 'Tiệm chăm sóc')}
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ</div>
         <div class="ps-total"><span>Tạm tính</span><span id="bath-total" class="ps-amount">—</span></div>
       </div>
 

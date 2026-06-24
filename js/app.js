@@ -91,6 +91,33 @@ function timeFactor(t) {
   return Math.max(0.80, Math.min(1.40, factor));
 }
 
+// Giá theo phòng khám đang chọn: base × clinic.priceFactor (làm tròn tới nghìn)
+function clinicPrice(base) {
+  const c = getSelectedClinic();
+  const f = c && c.priceFactor ? c.priceFactor : 1;
+  return Math.round((base || 0) * f / 1000) * 1000;
+}
+
+// Tính lại giá các option khám theo phòng khám + khung giờ; trả về giá option đang chọn
+function updateClinicPrices(prefix) {
+  const c = getSelectedClinic();
+  const cf = c && c.priceFactor ? c.priceFactor : 1;
+  const tEl = document.querySelector('#' + prefix + '-time .time-slot.selected');
+  const tf = timeFactor(tEl ? tEl.dataset.time : '09:00');
+  const f = cf * tf;
+  let total = 0;
+  document.querySelectorAll('#' + prefix + '-type .option-card').forEach(card => {
+    const priceEl = card.querySelector('.option-price');
+    if (!priceEl || priceEl.dataset.base == null) return;
+    const val = Math.round(parseInt(priceEl.dataset.base, 10) * f / 1000) * 1000;
+    priceEl.textContent = formatVND(val);
+    if (card.classList.contains('selected')) total = val;
+  });
+  const totalEl = document.getElementById(prefix + '-total');
+  if (totalEl) totalEl.textContent = formatVND(total);
+  return total;
+}
+
 // Tính lại giá tất cả option theo tiệm + giờ đang chọn; trả về giá của option đang chọn
 // prefix: 'groom' (grid id 'groom-style', 'groom-time') hoặc 'bath' ('bath-pkg', 'bath-time')
 function updateServicePrices(prefix) {
@@ -127,6 +154,24 @@ function openPetRecord(id) {
   goTo('petrecord');
 }
 
+// Mở chi tiết phòng khám (đồng thời chọn phòng khám đó cho lần đặt dịch vụ)
+function openClinicDetail(id) {
+  state.viewClinicId = id;
+  state.booking.clinicId = id;
+  const c = state.clinics.find(x => x.id === id);
+  if (c) state.booking.location = c.name;
+  goTo('clinicdetail');
+}
+
+// Mở chi tiết tiệm chăm sóc (đồng thời chọn tiệm đó)
+function openSalonDetail(id) {
+  state.viewSalonId = id;
+  state.booking.salonId = id;
+  const s = state.salons.find(x => x.id === id);
+  if (s) state.booking.location = s.name;
+  goTo('salondetail');
+}
+
 // Mở màn chỉnh sửa thú cưng theo id
 function editPetById(id) {
   const pet = state.pets.find(p => p.id === id);
@@ -149,8 +194,8 @@ function handleGlobalSearch(q) {
   // Chỉ tìm các chức năng lớn của app
   const dests = [
     { kw: ['tiêm', 'vắc xin', 'vaccine', 'tiêm phòng'], label: 'Tiêm phòng', sub: 'Đặt lịch tiêm vắc xin', target: 'vaccineselect', icon: ICONS.syringe },
-    { kw: ['khám', 'kiểm tra', 'phòng khám', 'sức khỏe', 'thuốc'], label: 'Phòng khám', sub: 'Khám, tiêm & mua thuốc', target: 'clinic', icon: ICONS.calendar },
-    { kw: ['spa', 'tắm', 'cắt lông', 'grooming', 'làm đẹp', 'tiệm'], label: 'Spa', sub: 'Tắm & cắt lông', target: 'spa', icon: ICONS.heart },
+    { kw: ['khám', 'kiểm tra', 'phòng khám', 'sức khỏe', 'thuốc'], label: 'Phòng khám', sub: 'Khám, tiêm & mua thuốc', target: 'clinics', icon: ICONS.calendar },
+    { kw: ['spa', 'tắm', 'cắt lông', 'grooming', 'làm đẹp', 'tiệm'], label: 'Spa', sub: 'Tắm & cắt lông', target: 'salons', icon: ICONS.heart },
     { kw: ['cửa hàng', 'shop', 'mua sắm', 'phụ kiện', 'thức ăn', 'sản phẩm', 'đồ chơi'], label: 'Cửa hàng', sub: 'Thức ăn, đồ chơi, phụ kiện', target: 'shop', icon: ICONS.cart },
     { kw: ['cộng đồng', 'community', 'bài viết', 'bài đăng'], label: 'Cộng đồng', sub: 'Bài viết từ cộng đồng', target: 'community', icon: ICONS.users },
     { kw: ['nhắc nhở', 'nhắc nhở sắp tới', 'lịch', 'lịch hẹn', 'sắp tới', 'appointment'], label: 'Nhắc nhở sắp tới', sub: 'Lịch hẹn của tất cả thú cưng', target: 'schedule', icon: ICONS.clock },
@@ -207,7 +252,7 @@ function bindScreenEvents(screen) {
     case 'vaccineselect': bindVaccineSelectEvents(); break;
     case 'booking': bindBookingEvents(); break;
     case 'home': bindHomeEvents(); break;
-    case 'checkup': bindServiceScreen('checkup-pet-list', 'checkup-type', 'checkup-time', 'checkup-clinic-list', 'clinicId'); break;
+    case 'checkup': bindServiceScreen('checkup-pet-list', 'checkup-type', 'checkup-time', null, null, () => updateClinicPrices('checkup')); break;
     case 'medicine': bindServiceScreen('med-pet-list', null, null); bindMedicineSearch(); break;
     case 'grooming': bindServiceScreen('groom-pet-list', 'groom-style', 'groom-time', 'groom-salon-list', 'salonId', () => updateServicePrices('groom')); break;
     case 'bath': bindServiceScreen('bath-pet-list', 'bath-pkg', 'bath-time', 'bath-salon-list', 'salonId', () => updateServicePrices('bath')); break;
@@ -351,10 +396,17 @@ function handleGoToBooking() {
 
 /* --- Booking Form --- */
 function bindBookingEvents() {
+  // Giá tiêm ban đầu theo vắc xin đang chọn
+  const sel0 = state.basicVaccines.find(v => v.name === state.booking.vaccine) || state.basicVaccines[0];
+  state.booking.vaccinePrice = clinicPrice(sel0 ? sel0.base : 0);
+
   // Vaccine tags
   document.querySelectorAll('#vaccine-tags .tag').forEach(t => {
     t.addEventListener('click', () => {
       state.booking.vaccine = t.dataset.vaccine;
+      state.booking.vaccinePrice = parseInt(t.dataset.price, 10) || 0;
+      const priceEl = document.getElementById('booking-vaccine-price');
+      if (priceEl) priceEl.textContent = formatVND(state.booking.vaccinePrice);
       document.querySelectorAll('#vaccine-tags .tag').forEach(x =>
         x.className = 'tag ' + (x.dataset.vaccine === state.booking.vaccine ? 'active' : 'inactive')
       );
@@ -370,9 +422,6 @@ function bindBookingEvents() {
       );
     });
   });
-
-  // Clinic picker
-  bindVenuePicker('booking-clinic-list', 'clinicId');
 }
 
 function handleConfirmBooking() {
@@ -388,10 +437,12 @@ function handleConfirmBooking() {
   state.booking.location = clinic.name;
   state.booking.note = document.getElementById('booking-note').value;
 
+  const priceStr = state.booking.vaccinePrice ? formatVND(state.booking.vaccinePrice) : '';
+
   // Lưu lịch hẹn mới vào danh sách
   addAppointment({
     petId: state.booking.petId,
-    type: 'Tiêm phòng — ' + state.booking.vaccine,
+    type: 'Tiêm phòng — ' + state.booking.vaccine + (priceStr ? ' · ' + priceStr : ''),
     dateISO: state.booking.date,
     time: state.booking.time,
     place: clinic.name,
@@ -657,7 +708,7 @@ function handleServiceSuccess(serviceName, serviceType) {
     placeStr = locEl.value;
   }
 
-  // Giá: với spa/tắm, lấy giá đã tính theo tiệm + giờ; tính trực tiếp từ option đang chọn
+  // Giá: spa/tắm theo tiệm + giờ; khám theo phòng khám
   let priceStr = '';
   if (serviceType === 'grooming' || serviceType === 'bath') {
     const prefix = serviceType === 'grooming' ? 'groom' : 'bath';
@@ -668,6 +719,16 @@ function handleServiceSuccess(serviceName, serviceType) {
     const sel = document.querySelector('#' + prefix + '-style .option-card.selected .option-price, #' + prefix + '-pkg .option-card.selected .option-price');
     if (sel && sel.dataset.base != null) {
       const val = Math.round(parseInt(sel.dataset.base, 10) * sf * tf / 1000) * 1000;
+      priceStr = formatVND(val);
+    }
+  } else if (serviceType === 'checkup') {
+    const sel = document.querySelector('#checkup-type .option-card.selected .option-price');
+    if (sel && sel.dataset.base != null) {
+      const c = getSelectedClinic();
+      const cf = c && c.priceFactor ? c.priceFactor : 1;
+      const tEl = document.querySelector('#checkup-time .time-slot.selected');
+      const tf = timeFactor(tEl ? tEl.dataset.time : '09:00');
+      const val = Math.round(parseInt(sel.dataset.base, 10) * cf * tf / 1000) * 1000;
       priceStr = formatVND(val);
     }
   }

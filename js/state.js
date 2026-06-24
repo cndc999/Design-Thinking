@@ -114,27 +114,67 @@ const state = {
   booking: {
     petId: 1, vaccine: 'Dại (Rabies)',
     date: '2026-06-04', time: '09:00',
-    clinicId: 1, salonId: 1,
+    clinicId: 1, salonId: 1, vaccinePrice: 0,
     location: 'Phòng Khám Thú Y Yên Lãng',
     reminder: '1 ngày', note: ''
   },
 
   /* ===== CLINICS (phòng khám: địa chỉ + đánh giá sao /5) ===== */
   clinics: [
-    { id: 1, name: 'Phòng Khám Thú Y Yên Lãng', address: '123 Yên Lãng, Đống Đa, Hà Nội',     rating: 4.8, reviews: 320 },
-    { id: 2, name: 'Happy Paws Clinic',          address: '45 Thái Hà, Đống Đa, Hà Nội',       rating: 4.6, reviews: 210 },
-    { id: 3, name: 'PetHealth Center',           address: '78 Cầu Giấy, Cầu Giấy, Hà Nội',     rating: 4.9, reviews: 540 },
-    { id: 4, name: 'Animal Care Hà Nội',         address: '210 Giải Phóng, Hai Bà Trưng, Hà Nội', rating: 4.5, reviews: 180 },
-    { id: 5, name: 'VetHospital Pro',            address: '12 Nguyễn Trãi, Thanh Xuân, Hà Nội', rating: 4.7, reviews: 295 },
+    { id: 1, name: 'Phòng Khám Thú Y Yên Lãng', address: '123 Yên Lãng, Đống Đa, Hà Nội',     rating: 4.8, reviews: 320, priceFactor: 1.00,
+      desc: 'Phòng khám đa khoa thú y, đội ngũ bác sĩ giàu kinh nghiệm, trang thiết bị hiện đại.',
+      img: 'https://cdn.pixabay.com/photo/2018/10/01/09/21/pets-3715733_640.jpg' },
+    { id: 2, name: 'Happy Paws Clinic',          address: '45 Thái Hà, Đống Đa, Hà Nội',       rating: 4.6, reviews: 210, priceFactor: 0.95,
+      desc: 'Chuyên khám, tiêm phòng và chăm sóc sức khỏe toàn diện cho chó mèo.',
+      img: 'https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_640.jpg' },
+    { id: 3, name: 'PetHealth Center',           address: '78 Cầu Giấy, Cầu Giấy, Hà Nội',     rating: 4.9, reviews: 540, priceFactor: 1.20,
+      desc: 'Trung tâm thú y lớn với phòng xét nghiệm, siêu âm, X-quang tại chỗ.',
+      img: 'https://cdn.pixabay.com/photo/2016/12/13/05/15/puppy-1903313_640.jpg' },
+    { id: 4, name: 'Animal Care Hà Nội',         address: '210 Giải Phóng, Hai Bà Trưng, Hà Nội', rating: 4.5, reviews: 180, priceFactor: 0.90,
+      desc: 'Phòng khám tận tâm, hỗ trợ cấp cứu và điều trị nội trú.',
+      img: 'https://cdn.pixabay.com/photo/2015/11/17/13/13/bulldog-1047518_640.jpg' },
+    { id: 5, name: 'VetHospital Pro',            address: '12 Nguyễn Trãi, Thanh Xuân, Hà Nội', rating: 4.7, reviews: 295, priceFactor: 1.10,
+      desc: 'Bệnh viện thú y chuyên sâu, phẫu thuật và nha khoa thú cưng.',
+      img: 'https://cdn.pixabay.com/photo/2019/08/19/07/45/dog-4415649_640.jpg' },
   ],
 
   /* ===== SALONS (tiệm chăm sóc / spa / cắt lông) — priceFactor: hệ số giá riêng từng tiệm ===== */
   salons: [
-    { id: 1, name: 'PetSpa Đống Đa',        address: '45 Tây Sơn, Đống Đa, Hà Nội',        rating: 4.7, reviews: 264, priceFactor: 1.00 },
-    { id: 2, name: 'Pawsome Grooming',      address: '88 Kim Mã, Ba Đình, Hà Nội',         rating: 4.8, reviews: 312, priceFactor: 1.10 },
-    { id: 3, name: 'Fluffy Pet Salon',      address: '17 Trần Duy Hưng, Cầu Giấy, Hà Nội', rating: 4.6, reviews: 198, priceFactor: 0.95 },
-    { id: 4, name: 'Royal Pet Spa',         address: '102 Bà Triệu, Hai Bà Trưng, Hà Nội', rating: 4.9, reviews: 421, priceFactor: 1.25 },
-    { id: 5, name: 'Cún Mèo Grooming',      address: '5 Nguyễn Khang, Cầu Giấy, Hà Nội',   rating: 4.4, reviews: 143, priceFactor: 0.85 },
+    { id: 1, name: 'PetSpa Đống Đa',        address: '45 Tây Sơn, Đống Đa, Hà Nội',        rating: 4.7, reviews: 264, priceFactor: 1.00,
+      desc: 'Spa & grooming chuyên nghiệp, không gian sạch sẽ, nhân viên thân thiện.',
+      img: 'https://cdn.pixabay.com/photo/2016/02/19/11/19/dog-1209129_640.jpg' },
+    { id: 2, name: 'Pawsome Grooming',      address: '88 Kim Mã, Ba Đình, Hà Nội',         rating: 4.8, reviews: 312, priceFactor: 1.10,
+      desc: 'Tạo kiểu lông thời trang, sản phẩm chăm sóc cao cấp.',
+      img: 'https://cdn.pixabay.com/photo/2018/03/31/06/31/dog-3277416_640.jpg' },
+    { id: 3, name: 'Fluffy Pet Salon',      address: '17 Trần Duy Hưng, Cầu Giấy, Hà Nội', rating: 4.6, reviews: 198, priceFactor: 0.95,
+      desc: 'Tắm, cắt tỉa và spa thư giãn cho thú cưng.',
+      img: 'https://cdn.pixabay.com/photo/2017/09/25/13/12/dog-2785074_640.jpg' },
+    { id: 4, name: 'Royal Pet Spa',         address: '102 Bà Triệu, Hai Bà Trưng, Hà Nội', rating: 4.9, reviews: 421, priceFactor: 1.25,
+      desc: 'Dịch vụ spa cao cấp, massage và chăm sóc đặc biệt.',
+      img: 'https://cdn.pixabay.com/photo/2016/05/09/10/42/dog-1381182_640.jpg' },
+    { id: 5, name: 'Cún Mèo Grooming',      address: '5 Nguyễn Khang, Cầu Giấy, Hà Nội',   rating: 4.4, reviews: 143, priceFactor: 0.85,
+      desc: 'Cắt tỉa nhanh gọn, giá hợp lý cho mọi thú cưng.',
+      img: 'https://cdn.pixabay.com/photo/2019/11/23/12/22/cat-4646692_640.jpg' },
+  ],
+
+  /* ===== CATALOG CƠ BẢN (dùng chung mọi cơ sở; giá = base × clinic.priceFactor) ===== */
+  basicVaccines: [
+    { name: 'Dại (Rabies)',     base: 120000 },
+    { name: '5 bệnh (DHPPi)',   base: 250000 },
+    { name: '7 bệnh',           base: 320000 },
+    { name: 'Cúm',              base: 150000 },
+  ],
+  checkupTypes: [
+    { value: 'basic',  name: 'Khám cơ bản',     desc: 'Kiểm tra tổng quát, đo nhiệt độ, cân nặng', base: 200000 },
+    { value: 'full',   name: 'Khám toàn diện',  desc: 'Xét nghiệm máu, siêu âm, X-quang',          base: 500000 },
+    { value: 'dental', name: 'Khám răng miệng', desc: 'Kiểm tra, cạo vôi, đánh bóng răng',         base: 350000 },
+  ],
+  basicMedicines: [
+    { name: 'Drontal Plus',       desc: 'Tẩy giun cho chó — 1 viên/10kg', base: 85000 },
+    { name: 'Vitamin B Complex',  desc: 'Bổ sung vitamin nhóm B',          base: 120000 },
+    { name: 'Frontline Plus',     desc: 'Trị ve, bọ chét — ống 1ml',       base: 180000 },
+    { name: 'Amoxicillin 250mg',  desc: 'Kháng sinh — cần đơn bác sĩ',      base: 65000 },
+    { name: 'Omega 3 Fish Oil',   desc: 'Dầu cá bổ sung — 60 viên',         base: 250000 },
   ],
 
   /* ===== REVIEW POOL (dữ liệu giả lập để sinh feedback) ===== */
@@ -167,6 +207,10 @@ const state = {
 
   // thú cưng đang xem hồ sơ y tế
   viewPetId: null,
+
+  // phòng khám / tiệm đang xem chi tiết
+  viewClinicId: null,
+  viewSalonId: null,
 
   /* ===== APPOINTMENTS (lịch hẹn thật, sẽ được thêm khi đặt lịch) ===== */
   apptSeq: 4, // id tiếp theo sẽ là 5
