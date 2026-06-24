@@ -46,6 +46,158 @@ function addAppointment({ petId, type, dateISO, time, place, color }) {
   });
 }
 
+/* ===== VENUE HELPERS (phòng khám & tiệm chăm sóc) ===== */
+
+// Lấy phòng khám đang được chọn
+function getSelectedClinic() {
+  return state.clinics.find(c => c.id === state.booking.clinicId) || state.clinics[0] || null;
+}
+
+// Lấy tiệm chăm sóc đang được chọn
+function getSelectedSalon() {
+  return state.salons.find(s => s.id === state.booking.salonId) || state.salons[0] || null;
+}
+
+// Gắn sự kiện chọn (phòng khám hoặc tiệm) cho 1 danh sách
+// bookingKey: 'clinicId' hoặc 'salonId'; onChange: gọi lại sau khi chọn
+function bindVenuePicker(listId, bookingKey, onChange) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.querySelectorAll('.clinic-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.booking[bookingKey] = parseInt(item.dataset.venueId);
+      const venue = bookingKey === 'salonId' ? getSelectedSalon() : getSelectedClinic();
+      if (venue) state.booking.location = venue.name;
+      list.querySelectorAll('.clinic-item').forEach(x =>
+        x.classList.toggle('selected', x === item)
+      );
+      if (typeof onChange === 'function') onChange();
+    });
+  });
+}
+
+/* ===== PRICING (giá theo tiệm + khung giờ) ===== */
+
+// Định dạng tiền VNĐ: 150000 -> '150.000đ'
+function formatVND(n) {
+  return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ';
+}
+
+// Hệ số theo giờ: sớm rẻ, muộn đắt. 8h -> 0.90, mỗi giờ +5%, tối đa ~1.40
+function timeFactor(t) {
+  const parts = (t || '09:00').split(':');
+  const h = parseInt(parts[0], 10) + (parseInt(parts[1] || '0', 10) / 60);
+  const factor = 0.90 + (h - 8) * 0.05;
+  return Math.max(0.80, Math.min(1.40, factor));
+}
+
+// Tính lại giá tất cả option theo tiệm + giờ đang chọn; trả về giá của option đang chọn
+// prefix: 'groom' (grid id 'groom-style', 'groom-time') hoặc 'bath' ('bath-pkg', 'bath-time')
+function updateServicePrices(prefix) {
+  const salon = getSelectedSalon();
+  const sf = salon && salon.priceFactor ? salon.priceFactor : 1;
+
+  const timeEl = document.querySelector('#' + prefix + '-time .time-slot.selected');
+  const tf = timeFactor(timeEl ? timeEl.dataset.time : '09:00');
+
+  let selectedTotal = 0;
+  document.querySelectorAll('#' + prefix + '-style .option-card, #' + prefix + '-pkg .option-card').forEach(card => {
+    const priceEl = card.querySelector('.option-price');
+    if (!priceEl || priceEl.dataset.base == null) return;
+    const base = parseInt(priceEl.dataset.base, 10);
+    const val = Math.round(base * sf * tf / 1000) * 1000; // làm tròn tới nghìn
+    priceEl.textContent = formatVND(val);
+    if (card.classList.contains('selected')) selectedTotal = val;
+  });
+
+  const totalEl = document.getElementById(prefix + '-total');
+  if (totalEl) totalEl.textContent = formatVND(selectedTotal);
+  return selectedTotal;
+}
+
+// Mở màn đánh giá cho 1 phòng khám / tiệm
+function openReviews(type, id) {
+  state.viewReview = { type, id };
+  goTo('reviews');
+}
+
+// Mở hồ sơ y tế của thú cưng
+function openPetRecord(id) {
+  state.viewPetId = id;
+  goTo('petrecord');
+}
+
+// Mở màn chỉnh sửa thú cưng theo id
+function editPetById(id) {
+  const pet = state.pets.find(p => p.id === id);
+  if (pet) { state.editingPet = pet; goTo('editpet'); }
+}
+
+/* ===== GLOBAL SEARCH (tìm kiếm toàn ứng dụng) ===== */
+
+function handleGlobalSearch(q) {
+  const box = document.getElementById('search-results');
+  const clearBtn = document.getElementById('search-clear');
+  if (!box) return;
+
+  const query = (q || '').trim().toLowerCase();
+  if (clearBtn) clearBtn.style.display = query ? 'flex' : 'none';
+  if (!query) { box.innerHTML = ''; box.classList.remove('show'); return; }
+
+  const results = [];
+
+  // Chỉ tìm các chức năng lớn của app
+  const dests = [
+    { kw: ['tiêm', 'vắc xin', 'vaccine', 'tiêm phòng'], label: 'Tiêm phòng', sub: 'Đặt lịch tiêm vắc xin', target: 'vaccineselect', icon: ICONS.syringe },
+    { kw: ['khám', 'kiểm tra', 'phòng khám', 'sức khỏe', 'thuốc'], label: 'Phòng khám', sub: 'Khám, tiêm & mua thuốc', target: 'clinic', icon: ICONS.calendar },
+    { kw: ['spa', 'tắm', 'cắt lông', 'grooming', 'làm đẹp', 'tiệm'], label: 'Spa', sub: 'Tắm & cắt lông', target: 'spa', icon: ICONS.heart },
+    { kw: ['cửa hàng', 'shop', 'mua sắm', 'phụ kiện', 'thức ăn', 'sản phẩm', 'đồ chơi'], label: 'Cửa hàng', sub: 'Thức ăn, đồ chơi, phụ kiện', target: 'shop', icon: ICONS.cart },
+    { kw: ['cộng đồng', 'community', 'bài viết', 'bài đăng'], label: 'Cộng đồng', sub: 'Bài viết từ cộng đồng', target: 'community', icon: ICONS.users },
+    { kw: ['nhắc nhở', 'nhắc nhở sắp tới', 'lịch', 'lịch hẹn', 'sắp tới', 'appointment'], label: 'Nhắc nhở sắp tới', sub: 'Lịch hẹn của tất cả thú cưng', target: 'schedule', icon: ICONS.clock },
+  ];
+
+  const matches = (d) => {
+    if ((d.label || '').toLowerCase().includes(query)) return true;
+    return d.kw.some(k => k.includes(query) || query.includes(k));
+  };
+
+  dests.forEach(d => {
+    if (matches(d)) {
+      results.push({ icon: d.icon, title: d.label, sub: d.sub, onclick: `selectSearch('screen','${d.target}')` });
+    }
+  });
+
+  if (!results.length) {
+    box.innerHTML = `<div class="search-empty">Không tìm thấy chức năng cho "${q}"</div>`;
+  } else {
+    box.innerHTML = results.map(r => `
+      <div class="search-result-item" onclick="${r.onclick}">
+        <div class="sr-ic">${r.icon || ''}</div>
+        <div class="sr-text">
+          <div class="sr-title">${r.title}</div>
+          <div class="sr-sub">${r.sub || ''}</div>
+        </div>
+        <span class="sr-tag">Chức năng</span>
+      </div>
+    `).join('');
+  }
+  box.classList.add('show');
+}
+
+function selectSearch(type, target) {
+  clearGlobalSearch();
+  if (type === 'screen') goTo(target);
+}
+
+function clearGlobalSearch() {
+  const input = document.getElementById('global-search');
+  const box = document.getElementById('search-results');
+  const clearBtn = document.getElementById('search-clear');
+  if (input) input.value = '';
+  if (box) { box.innerHTML = ''; box.classList.remove('show'); }
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
 /* ===== EVENT BINDING (gọi sau mỗi lần goTo) ===== */
 
 function bindScreenEvents(screen) {
@@ -55,10 +207,10 @@ function bindScreenEvents(screen) {
     case 'vaccineselect': bindVaccineSelectEvents(); break;
     case 'booking': bindBookingEvents(); break;
     case 'home': bindHomeEvents(); break;
-    case 'checkup': bindServiceScreen('checkup-pet-list', 'checkup-type', 'checkup-time'); break;
+    case 'checkup': bindServiceScreen('checkup-pet-list', 'checkup-type', 'checkup-time', 'checkup-clinic-list', 'clinicId'); break;
     case 'medicine': bindServiceScreen('med-pet-list', null, null); bindMedicineSearch(); break;
-    case 'grooming': bindServiceScreen('groom-pet-list', 'groom-style', 'groom-time'); break;
-    case 'bath': bindServiceScreen('bath-pet-list', 'bath-pkg', 'bath-time'); break;
+    case 'grooming': bindServiceScreen('groom-pet-list', 'groom-style', 'groom-time', 'groom-salon-list', 'salonId', () => updateServicePrices('groom')); break;
+    case 'bath': bindServiceScreen('bath-pet-list', 'bath-pkg', 'bath-time', 'bath-salon-list', 'salonId', () => updateServicePrices('bath')); break;
     case 'editpet': bindEditPetEvents(); break;
     case 'community': bindCommunityEvents(); break;
     case 'createpost': bindCreatePostEvents(); break;
@@ -218,18 +370,22 @@ function bindBookingEvents() {
       );
     });
   });
+
+  // Clinic picker
+  bindVenuePicker('booking-clinic-list', 'clinicId');
 }
 
 function handleConfirmBooking() {
   const date = document.getElementById('booking-date').value;
   const time = document.getElementById('booking-time').value;
-  const loc = document.getElementById('booking-location').value;
+  const clinic = getSelectedClinic();
 
   if (!date) { showToast('Vui lòng chọn ngày tiêm'); return; }
+  if (!clinic) { showToast('Vui lòng chọn phòng khám'); return; }
 
   state.booking.date = date;
   state.booking.time = time || '09:00';
-  state.booking.location = loc || 'Phòng Khám Thú Y Yên Lãng';
+  state.booking.location = clinic.name;
   state.booking.note = document.getElementById('booking-note').value;
 
   // Lưu lịch hẹn mới vào danh sách
@@ -238,7 +394,7 @@ function handleConfirmBooking() {
     type: 'Tiêm phòng — ' + state.booking.vaccine,
     dateISO: state.booking.date,
     time: state.booking.time,
-    place: state.booking.location,
+    place: clinic.name,
     color: 'var(--primary)',
   });
 
@@ -274,7 +430,7 @@ function bindHomeEvents() {
 }
 
 /* ===== GENERIC SERVICE SCREEN EVENTS ===== */
-function bindServiceScreen(petListId, optionGridId, timeGridId) {
+function bindServiceScreen(petListId, optionGridId, timeGridId, venueListId, venueBookingKey, onChange) {
   // Pet selector
   const petList = document.getElementById(petListId);
   if (petList) {
@@ -296,6 +452,7 @@ function bindServiceScreen(petListId, optionGridId, timeGridId) {
         card.addEventListener('click', () => {
           grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
           card.classList.add('selected');
+          if (typeof onChange === 'function') onChange();
         });
       });
     }
@@ -309,10 +466,19 @@ function bindServiceScreen(petListId, optionGridId, timeGridId) {
         slot.addEventListener('click', () => {
           grid.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
           slot.classList.add('selected');
+          if (typeof onChange === 'function') onChange();
         });
       });
     }
   }
+
+  // Venue picker (phòng khám / tiệm)
+  if (venueListId) {
+    bindVenuePicker(venueListId, venueBookingKey || 'clinicId', onChange);
+  }
+
+  // Tính giá lần đầu (nếu có)
+  if (typeof onChange === 'function') onChange();
 }
 
 function bindMedicineSearch() {
@@ -478,22 +644,49 @@ function handleServiceSuccess(serviceName, serviceType) {
     dateStr = `${days[d.getDay()]}, ${d.getDate()} tháng ${d.getMonth()+1}, ${d.getFullYear()}`;
   }
   const timeStr = timeSlot ? timeSlot.textContent.trim() : '';
-  const locStr = locEl ? locEl.value : '—';
+
+  // Chọn nơi theo loại dịch vụ: khám -> phòng khám, spa/tắm -> tiệm chăm sóc
+  let placeStr = '—';
+  if (serviceType === 'checkup' || serviceType === 'medicine') {
+    const clinic = getSelectedClinic();
+    placeStr = clinic ? clinic.name : '—';
+  } else if (serviceType === 'grooming' || serviceType === 'bath') {
+    const salon = getSelectedSalon();
+    placeStr = salon ? salon.name : '—';
+  } else if (locEl) {
+    placeStr = locEl.value;
+  }
+
+  // Giá: với spa/tắm, lấy giá đã tính theo tiệm + giờ; tính trực tiếp từ option đang chọn
+  let priceStr = '';
+  if (serviceType === 'grooming' || serviceType === 'bath') {
+    const prefix = serviceType === 'grooming' ? 'groom' : 'bath';
+    const salon = getSelectedSalon();
+    const sf = salon && salon.priceFactor ? salon.priceFactor : 1;
+    const tEl = document.querySelector('#' + prefix + '-time .time-slot.selected');
+    const tf = timeFactor(tEl ? tEl.dataset.time : '09:00');
+    const sel = document.querySelector('#' + prefix + '-style .option-card.selected .option-price, #' + prefix + '-pkg .option-card.selected .option-price');
+    if (sel && sel.dataset.base != null) {
+      const val = Math.round(parseInt(sel.dataset.base, 10) * sf * tf / 1000) * 1000;
+      priceStr = formatVND(val);
+    }
+  }
 
   state.lastSuccess = {
     service: serviceName,
     datetime: dateStr + (timeStr ? ' | ' + timeStr : ''),
-    location: locStr,
+    location: placeStr,
+    price: priceStr,
     subtitle: serviceName + ' đã được đặt lịch'
   };
 
   // Lưu lịch hẹn mới vào danh sách
   addAppointment({
     petId: state.booking.petId,
-    type: serviceName,
+    type: serviceName + (priceStr ? ' · ' + priceStr : ''),
     dateISO: dateEl ? dateEl.value : '',
     time: timeStr,
-    place: locEl ? locEl.value : '',
+    place: placeStr,
     color: colorForService(serviceType + ' ' + serviceName),
   });
 

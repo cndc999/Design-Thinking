@@ -74,15 +74,36 @@ const state = {
     { id: 1, name: 'Luna', breed: 'Golden Retriever', type: 'dog', gender: 'female', age: 3,
       weight: 28, birthday: '2021-03-15', status: 'healthy', statusLabel: 'Sức Khoẻ Tuyệt Vời',
       lastVisit: '15 tháng 6, 2026',
-      img: 'https://cdn.pixabay.com/photo/2018/10/01/09/21/pets-3715733_640.jpg' },
+      img: 'https://cdn.pixabay.com/photo/2018/10/01/09/21/pets-3715733_640.jpg',
+      allergies: 'Không', neutered: 'Đã triệt sản',
+      bloodType: 'DEA 1.1+', vaccines: ['Dại (Rabies)', '7 bệnh', 'Cúm'],
+      history: [
+        { dateISO: '2026-06-15', kind: 'vaccine', type: 'Tiêm phòng', detail: 'Vắc xin Dại (Rabies)', place: 'Phòng Khám Thú Y Yên Lãng', vet: 'BS. Trần Minh', note: 'Khỏe mạnh, tiêm nhắc đúng hạn' },
+        { dateISO: '2026-03-10', kind: 'checkup', type: 'Khám tổng quát', detail: 'Khám sức khỏe định kỳ', place: 'Happy Paws Clinic', vet: 'BS. Lê Hoa', note: 'Các chỉ số bình thường, cân nặng ổn định' },
+        { dateISO: '2025-12-02', kind: 'vaccine', type: 'Tiêm phòng', detail: 'Vắc xin 7 bệnh', place: 'PetHealth Center', vet: 'BS. Trần Minh', note: 'Tiêm đầy đủ mũi nhắc' },
+        { dateISO: '2025-09-18', kind: 'spa', type: 'Spa', detail: 'Tắm & cắt lông', place: 'PetSpa Đống Đa', vet: '', note: 'Cắt tỉa gọn gàng' },
+      ] },
     { id: 2, name: 'Max', breed: 'French Bulldog', type: 'dog', gender: 'male', age: 2,
       weight: 12, birthday: '2022-07-22', status: 'warn', statusLabel: 'Cần Chú Ý',
       lastVisit: '10 tháng 6, 2026',
-      img: 'https://cdn.pixabay.com/photo/2015/11/17/13/13/bulldog-1047518_640.jpg' },
+      img: 'https://cdn.pixabay.com/photo/2015/11/17/13/13/bulldog-1047518_640.jpg',
+      allergies: 'Phấn hoa', neutered: 'Chưa triệt sản',
+      bloodType: 'DEA 1.1-', vaccines: ['Parvovirus', 'Care', 'Dại (Rabies)'],
+      history: [
+        { dateISO: '2026-06-10', kind: 'checkup', type: 'Khám tổng quát', detail: 'Khám da liễu', place: 'Animal Care Hà Nội', vet: 'BS. Phạm Tú', note: 'Viêm da nhẹ, kê thuốc bôi, tái khám sau 2 tuần' },
+        { dateISO: '2026-04-05', kind: 'vaccine', type: 'Tiêm phòng', detail: 'Vắc xin Parvovirus', place: 'Phòng Khám Thú Y Yên Lãng', vet: 'BS. Trần Minh', note: 'Ổn định' },
+        { dateISO: '2025-11-20', kind: 'checkup', type: 'Khám răng', detail: 'Cạo vôi & vệ sinh răng', place: 'VetHospital Pro', vet: 'BS. Đỗ Lan', note: 'Vệ sinh răng miệng định kỳ' },
+      ] },
     { id: 3, name: 'Oliver', breed: 'British Shorthair', type: 'cat', gender: 'male', age: 1,
       weight: 5, birthday: '2023-11-05', status: 'healthy', statusLabel: 'Khoẻ Mạnh',
       lastVisit: '8 tháng 6, 2026',
-      img: 'https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_640.jpg' },
+      img: 'https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_640.jpg',
+      allergies: 'Không', neutered: 'Chưa triệt sản',
+      bloodType: 'A', vaccines: ['4 bệnh mèo', 'Dại (Rabies)'],
+      history: [
+        { dateISO: '2026-06-08', kind: 'vaccine', type: 'Tiêm phòng', detail: 'Vắc xin 4 bệnh cho mèo', place: 'PetHealth Center', vet: 'BS. Lê Hoa', note: 'Khỏe mạnh' },
+        { dateISO: '2026-02-14', kind: 'checkup', type: 'Khám tổng quát', detail: 'Khám sức khỏe định kỳ', place: 'Happy Paws Clinic', vet: 'BS. Phạm Tú', note: 'Phát triển tốt' },
+      ] },
   ],
 
   createPet: {
@@ -93,9 +114,59 @@ const state = {
   booking: {
     petId: 1, vaccine: 'Dại (Rabies)',
     date: '2026-06-04', time: '09:00',
+    clinicId: 1, salonId: 1,
     location: 'Phòng Khám Thú Y Yên Lãng',
     reminder: '1 ngày', note: ''
   },
+
+  /* ===== CLINICS (phòng khám: địa chỉ + đánh giá sao /5) ===== */
+  clinics: [
+    { id: 1, name: 'Phòng Khám Thú Y Yên Lãng', address: '123 Yên Lãng, Đống Đa, Hà Nội',     rating: 4.8, reviews: 320 },
+    { id: 2, name: 'Happy Paws Clinic',          address: '45 Thái Hà, Đống Đa, Hà Nội',       rating: 4.6, reviews: 210 },
+    { id: 3, name: 'PetHealth Center',           address: '78 Cầu Giấy, Cầu Giấy, Hà Nội',     rating: 4.9, reviews: 540 },
+    { id: 4, name: 'Animal Care Hà Nội',         address: '210 Giải Phóng, Hai Bà Trưng, Hà Nội', rating: 4.5, reviews: 180 },
+    { id: 5, name: 'VetHospital Pro',            address: '12 Nguyễn Trãi, Thanh Xuân, Hà Nội', rating: 4.7, reviews: 295 },
+  ],
+
+  /* ===== SALONS (tiệm chăm sóc / spa / cắt lông) — priceFactor: hệ số giá riêng từng tiệm ===== */
+  salons: [
+    { id: 1, name: 'PetSpa Đống Đa',        address: '45 Tây Sơn, Đống Đa, Hà Nội',        rating: 4.7, reviews: 264, priceFactor: 1.00 },
+    { id: 2, name: 'Pawsome Grooming',      address: '88 Kim Mã, Ba Đình, Hà Nội',         rating: 4.8, reviews: 312, priceFactor: 1.10 },
+    { id: 3, name: 'Fluffy Pet Salon',      address: '17 Trần Duy Hưng, Cầu Giấy, Hà Nội', rating: 4.6, reviews: 198, priceFactor: 0.95 },
+    { id: 4, name: 'Royal Pet Spa',         address: '102 Bà Triệu, Hai Bà Trưng, Hà Nội', rating: 4.9, reviews: 421, priceFactor: 1.25 },
+    { id: 5, name: 'Cún Mèo Grooming',      address: '5 Nguyễn Khang, Cầu Giấy, Hà Nội',   rating: 4.4, reviews: 143, priceFactor: 0.85 },
+  ],
+
+  /* ===== REVIEW POOL (dữ liệu giả lập để sinh feedback) ===== */
+  reviewNames: [
+    'Minh Anh', 'Thu Trang', 'Quốc Việt', 'Hải Yến', 'Đức Huy',
+    'Phương Linh', 'Tuấn Kiệt', 'Ngọc Mai', 'Bảo Nam', 'Khánh Vy',
+    'Gia Bảo', 'Thanh Hà', 'Hoàng Long', 'Mỹ Duyên', 'Anh Tú',
+  ],
+  reviewTexts5: [
+    'Nhân viên thân thiện, thú cưng nhà mình được chăm sóc rất kỹ. Sẽ quay lại!',
+    'Không gian sạch sẽ, bác sĩ tư vấn nhiệt tình. Rất hài lòng.',
+    'Dịch vụ chuyên nghiệp, giá hợp lý. Bé nhà mình khoẻ hẳn ra.',
+    'Đặt lịch nhanh gọn, không phải chờ lâu. 5 sao xứng đáng!',
+    'Lần nào đưa bé tới cũng yên tâm. Cảm ơn cả team rất nhiều.',
+  ],
+  reviewTexts4: [
+    'Dịch vụ tốt, chỉ hơi đông vào cuối tuần nên phải chờ một chút.',
+    'Bé nhà mình được chăm sóc ổn, giá nhỉnh hơn vài nơi khác một chút.',
+    'Nhìn chung hài lòng, nhân viên dễ thương. Sẽ giới thiệu bạn bè.',
+    'Chỗ này ổn áp, không gian thoáng. Mong có thêm khung giờ tối.',
+  ],
+  reviewTexts3: [
+    'Tạm ổn, lần này phải chờ hơi lâu mới tới lượt.',
+    'Dịch vụ ổn nhưng chỗ gửi xe hơi chật.',
+  ],
+  reviewTimes: ['2 ngày trước', '1 tuần trước', '3 tuần trước', '1 tháng trước', 'Hôm qua', '2 tháng trước'],
+
+  // venue đang xem đánh giá: { type: 'clinic' | 'salon', id }
+  viewReview: null,
+
+  // thú cưng đang xem hồ sơ y tế
+  viewPetId: null,
 
   /* ===== APPOINTMENTS (lịch hẹn thật, sẽ được thêm khi đặt lịch) ===== */
   apptSeq: 4, // id tiếp theo sẽ là 5

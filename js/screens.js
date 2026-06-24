@@ -12,12 +12,16 @@ function getScreenHTML(screen) {
     case 'success': return screenSuccess();
     case 'schedule': return screenSchedule();
     case 'clinic': return screenClinic();
+    case 'clinics': return screenClinics();
+    case 'salons': return screenSalons();
+    case 'reviews': return screenReviews();
     case 'spa': return screenSpa();
     case 'checkup': return screenCheckup();
     case 'medicine': return screenMedicine();
     case 'grooming': return screenGrooming();
     case 'bath': return screenBath();
     case 'editpet': return screenEditPet();
+    case 'petrecord': return screenPetRecord();
     case 'community': return screenCommunity();
     case 'createpost': return screenCreatePost();
     case 'genericsuccess': return screenGenericSuccess();
@@ -205,7 +209,7 @@ function screenHome() {
       </div>` : '';
 
   const petCards = state.pets.map(p => `
-    <div class="pet-card">
+    <div class="pet-card" onclick="openPetRecord(${p.id})">
       <div class="pet-avatar"><img src="${p.img}" alt="${p.name}"></div>
       <div class="pet-info">
         <div class="pet-name">${p.name}</div>
@@ -226,43 +230,45 @@ function screenHome() {
       <h1 class="page-title">Chào mừng trở lại!</h1>
       <p class="page-subtitle">Thông tin về thú cưng của bạn</p>
 
+      <!-- Thanh tìm kiếm toàn cục -->
+      <div class="search-wrap">
+        <span class="search-ic">${ICONS.search}</span>
+        <input type="text" id="global-search" class="search-input-global"
+          placeholder="Tìm chức năng: tiêm, spa, cửa hàng, lịch hẹn..."
+          oninput="handleGlobalSearch(this.value)">
+        <span class="search-clear" id="search-clear" onclick="clearGlobalSearch()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </span>
+      </div>
+      <div id="search-results" class="search-results"></div>
+
       <!-- CTA lớn: Thêm thú cưng -->
       <div class="home-cta" onclick="goTo('create')">
         <div class="cta-title">+ Thêm thú cưng mới</div>
         <div class="cta-sub">Tạo hồ sơ cho thú cưng của bạn</div>
       </div>
 
-      <!-- 3 action cards -->
-      <div class="action-row">
-        <div class="action-card" onclick="goTo('vaccineselect')">
-          <div class="ac-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.syringe}</div>
-          <div class="ac-title">Tiêm phòng</div>
-          <div class="ac-sub">Đặt lịch tiêm</div>
+      <!-- 3 ô danh mục chính -->
+      <div class="home-cats">
+        <div class="cat-box" onclick="goTo('clinic')">
+          <div class="cat-icon" style="background:var(--green-bg);color:var(--green)">${ICONS.calendar}</div>
+          <div class="cat-title">Phòng khám</div>
+          <div class="cat-sub">Khám · Tiêm · Thuốc</div>
         </div>
-        <div class="action-card" onclick="goTo('clinic')">
-          <div class="ac-icon" style="background:var(--green-bg);color:var(--green)">${ICONS.calendar}</div>
-          <div class="ac-title">Phòng khám</div>
-          <div class="ac-sub">Khám & mua thuốc</div>
+        <div class="cat-box" onclick="goTo('spa')">
+          <div class="cat-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.heart}</div>
+          <div class="cat-title">Spa</div>
+          <div class="cat-sub">Tắm · Cắt lông</div>
         </div>
-        <div class="action-card" onclick="goTo('spa')">
-          <div class="ac-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.heart}</div>
-          <div class="ac-title">Spa</div>
-          <div class="ac-sub">Tắm & cắt lông</div>
+        <div class="cat-box" onclick="goTo('shop')">
+          <div class="cat-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.cart}</div>
+          <div class="cat-title">Cửa hàng</div>
+          <div class="cat-sub">Thức ăn · Phụ kiện</div>
         </div>
       </div>
 
       <!-- Reminder → mở lịch tổng hợp (lấy lịch gần nhất sắp tới) -->
       ${reminderCard}
-
-      <!-- Shop card -->
-      <div class="shop-banner" onclick="goTo('shop')">
-        <span class="shop-banner-icon">${ICONS.cart}</span>
-        <div class="shop-banner-text">
-          <div class="shop-banner-title">Cửa hàng thú cưng</div>
-          <div class="shop-banner-sub">Thức ăn, đồ chơi, phụ kiện & hơn thế</div>
-        </div>
-        <span class="shop-banner-arrow">${ICONS.back}</span>
-      </div>
 
       <!-- Community -->
       <div class="community-preview" onclick="goTo('community')">
@@ -364,11 +370,8 @@ function screenBooking() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Địa điểm</label>
-        <div class="location-wrap">
-          <input type="text" class="form-input" id="booking-location" value="${b.location}">
-          <span class="suffix">${ICONS.pin}</span>
-        </div>
+        <label class="form-label">Chọn phòng khám</label>
+        ${clinicPickerHTML(state.booking.clinicId, 'booking-clinic-list')}
       </div>
 
       <div class="form-group">
@@ -478,6 +481,7 @@ function screenSchedule() {
 /* ===== CLINIC: Phòng khám ===== */
 function screenClinic() {
   const services = [
+    { id: 'vaccine', title: 'Tiêm phòng', sub: 'Đặt lịch tiêm vắc xin', icon: ICONS.syringe, color: 'var(--primary-bg)', iconColor: 'var(--primary)', screen: 'vaccineselect' },
     { id: 'checkup', title: 'Kiểm tra tổng quát', sub: 'Khám sức khỏe định kỳ', icon: ICONS.shield, color: 'var(--green-bg)', iconColor: 'var(--green)', screen: 'checkup' },
     { id: 'medicine', title: 'Mua thuốc', sub: 'Đặt mua thuốc theo đơn', icon: ICONS.plus, color: 'var(--orange-bg)', iconColor: 'var(--orange)', screen: 'medicine' },
   ];
@@ -498,6 +502,14 @@ function screenClinic() {
       <h1 class="page-title">Phòng khám</h1>
       <p class="page-subtitle">Chọn dịch vụ bạn cần</p>
       ${cards}
+      <div class="service-card" onclick="goTo('clinics')" style="margin-top:4px">
+        <div class="service-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.pin}</div>
+        <div class="service-info">
+          <div class="service-title">Phòng khám gần bạn</div>
+          <div class="service-sub">Xem địa chỉ & đánh giá phòng khám</div>
+        </div>
+        <div class="service-arrow">${ICONS.back}</div>
+      </div>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -526,6 +538,150 @@ function screenSpa() {
       <h1 class="page-title">Spa thú cưng</h1>
       <p class="page-subtitle">Chọn dịch vụ chăm sóc</p>
       ${cards}
+      <div class="service-card" onclick="goTo('salons')" style="margin-top:4px">
+        <div class="service-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.pin}</div>
+        <div class="service-info">
+          <div class="service-title">Tiệm chăm sóc gần bạn</div>
+          <div class="service-sub">Xem địa chỉ & đánh giá tiệm spa</div>
+        </div>
+        <div class="service-arrow">${ICONS.back}</div>
+      </div>
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
+}
+
+/* ===== Helper: Stars rating (đánh giá sao /5) ===== */
+function starsHTML(rating) {
+  const full = Math.round(rating || 0);
+  let out = '';
+  for (let i = 1; i <= 5; i++) {
+    out += `<span class="cstar ${i <= full ? 'on' : ''}">${ICONS.star}</span>`;
+  }
+  return out;
+}
+
+/* ===== Helper: Venue picker (chọn phòng khám / tiệm thay vì nhập tay) ===== */
+function venuePickerHTML(venues, selectedId, listId) {
+  const items = venues.map(v => `
+    <div class="clinic-item ${selectedId === v.id ? 'selected' : ''}" data-venue-id="${v.id}">
+      <div class="radio-circle"><div class="radio-dot"></div></div>
+      <div class="clinic-info">
+        <div class="clinic-name">${v.name}</div>
+        <div class="clinic-addr">${ICONS.pin}<span>${v.address}</span></div>
+        <div class="clinic-rate">
+          <span class="clinic-stars">${starsHTML(v.rating)}</span>
+          <span class="clinic-rate-num">${v.rating.toFixed(1)}</span>
+          <span class="clinic-reviews">(${v.reviews} đánh giá)</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  return `<div class="clinic-list" id="${listId || ''}">${items}</div>`;
+}
+function clinicPickerHTML(selectedId, listId) { return venuePickerHTML(state.clinics, selectedId, listId); }
+function salonPickerHTML(selectedId, listId) { return venuePickerHTML(state.salons, selectedId, listId); }
+
+/* ===== Helper: Venue list card (có nút xem đánh giá) ===== */
+function venueListHTML(venues, type) {
+  return venues.map(v => `
+    <div class="clinic-item static">
+      <div class="clinic-info">
+        <div class="clinic-name">${v.name}</div>
+        <div class="clinic-addr">${ICONS.pin}<span>${v.address}</span></div>
+        <div class="clinic-rate">
+          <span class="clinic-stars">${starsHTML(v.rating)}</span>
+          <span class="clinic-rate-num">${v.rating.toFixed(1)}</span>
+          <span class="clinic-reviews">(${v.reviews} đánh giá)</span>
+        </div>
+        <button class="review-link" onclick="openReviews('${type}', ${v.id})">${ICONS.comment} Xem đánh giá</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ===== Helper: Sinh review giả lập (ổn định theo id) ===== */
+function getReviews(type, id) {
+  const venue = (type === 'salon' ? state.salons : state.clinics).find(v => v.id === id);
+  if (!venue) return [];
+  // số review hiển thị: 4-5, sinh ổn định theo id
+  const count = 4 + (id % 2);
+  const list = [];
+  for (let i = 0; i < count; i++) {
+    const seed = id * 7 + i * 13;
+    const name = state.reviewNames[seed % state.reviewNames.length];
+    // phân bố sao quanh rating của venue
+    let stars, text;
+    const r = (seed % 10);
+    if (r < 6) { stars = 5; text = state.reviewTexts5[seed % state.reviewTexts5.length]; }
+    else if (r < 9) { stars = 4; text = state.reviewTexts4[seed % state.reviewTexts4.length]; }
+    else { stars = 3; text = state.reviewTexts3[seed % state.reviewTexts3.length]; }
+    const initials = name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
+    list.push({ name, initials, stars, text, time: state.reviewTimes[seed % state.reviewTimes.length] });
+  }
+  return list;
+}
+
+/* ===== CLINICS: Danh sách phòng khám ===== */
+function screenClinics() {
+  return `
+    <div class="screen-content">
+      <h1 class="page-title">Phòng khám gần bạn</h1>
+      <p class="page-subtitle">Chọn phòng khám uy tín cho thú cưng</p>
+      ${venueListHTML(state.clinics, 'clinic')}
+      <button class="btn-primary" onclick="goTo('vaccineselect')" style="margin-top:12px">+ Đặt lịch tại phòng khám</button>
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
+}
+
+/* ===== SALONS: Danh sách tiệm chăm sóc ===== */
+function screenSalons() {
+  return `
+    <div class="screen-content">
+      <h1 class="page-title">Tiệm chăm sóc gần bạn</h1>
+      <p class="page-subtitle">Spa, cắt lông & làm đẹp cho thú cưng</p>
+      ${venueListHTML(state.salons, 'salon')}
+      <button class="btn-primary" onclick="goTo('spa')" style="margin-top:12px">+ Đặt lịch chăm sóc</button>
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
+}
+
+/* ===== REVIEWS: Xem đánh giá của 1 phòng khám / tiệm ===== */
+function screenReviews() {
+  const v = state.viewReview;
+  if (!v) return screenClinics();
+  const venue = (v.type === 'salon' ? state.salons : state.clinics).find(x => x.id === v.id);
+  if (!venue) return screenClinics();
+
+  const reviews = getReviews(v.type, v.id);
+  const reviewCards = reviews.map(rv => `
+    <div class="review-card">
+      <div class="review-head">
+        <div class="review-avatar">${rv.initials}</div>
+        <div class="review-meta">
+          <div class="review-name">${rv.name}</div>
+          <div class="review-stars">${starsHTML(rv.stars)}</div>
+        </div>
+        <div class="review-time">${rv.time}</div>
+      </div>
+      <div class="review-text">${rv.text}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="screen-content">
+      <div class="review-summary">
+        <div class="rs-score">${venue.rating.toFixed(1)}</div>
+        <div class="rs-info">
+          <div class="rs-name">${venue.name}</div>
+          <div class="rs-stars">${starsHTML(venue.rating)}</div>
+          <div class="rs-sub">${venue.reviews} đánh giá · ${venue.address}</div>
+        </div>
+      </div>
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Đánh giá gần đây</span></div>
+      ${reviewCards}
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -602,11 +758,8 @@ function screenCheckup() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Phòng khám</label>
-        <div class="location-wrap">
-          <input type="text" class="form-input" id="checkup-location" value="Happy Paws Clinic — Đống Đa">
-          <span class="suffix">${ICONS.pin}</span>
-        </div>
+        <label class="form-label">Chọn phòng khám</label>
+        ${clinicPickerHTML(state.booking.clinicId, 'checkup-clinic-list')}
       </div>
 
       <button class="btn-primary" onclick="handleServiceSuccess('Kiểm tra tổng quát','checkup')">Xác nhận đặt lịch</button>
@@ -701,19 +854,19 @@ function screenGrooming() {
             <div class="option-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.edit}</div>
             <div class="option-name">Tỉa gọn cơ bản</div>
             <div class="option-desc">Tỉa lông mặt, chân, tai, đuôi</div>
-            <div class="option-price">150.000đ</div>
+            <div class="option-price" data-base="150000">150.000đ</div>
           </div>
           <div class="option-card" data-value="full">
             <div class="option-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.heart}</div>
             <div class="option-name">Cắt tạo kiểu</div>
             <div class="option-desc">Cắt theo yêu cầu, tạo kiểu thời trang</div>
-            <div class="option-price">250.000đ</div>
+            <div class="option-price" data-base="250000">250.000đ</div>
           </div>
           <div class="option-card" data-value="premium">
             <div class="option-icon" style="background:var(--orange-bg);color:var(--orange)">${ICONS.shield}</div>
             <div class="option-name">Combo VIP</div>
             <div class="option-desc">Cắt tạo kiểu + tắm + sấy + nước hoa</div>
-            <div class="option-price">400.000đ</div>
+            <div class="option-price" data-base="400000">400.000đ</div>
           </div>
         </div>
       </div>
@@ -739,11 +892,13 @@ function screenGrooming() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Spa</label>
-        <div class="location-wrap">
-          <input type="text" class="form-input" value="PetSpa Đống Đa — 45 Tây Sơn">
-          <span class="suffix">${ICONS.pin}</span>
-        </div>
+        <label class="form-label">Chọn tiệm chăm sóc</label>
+        ${salonPickerHTML(state.booking.salonId, 'groom-salon-list')}
+      </div>
+
+      <div class="price-summary">
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-total"><span>Tạm tính</span><span id="groom-total" class="ps-amount">—</span></div>
       </div>
 
       <button class="btn-primary" onclick="handleServiceSuccess('Cắt lông','grooming')">Xác nhận</button>
@@ -771,19 +926,19 @@ function screenBath() {
             <div class="option-icon" style="background:#E3F2FD;color:#1565C0">${ICONS.heart}</div>
             <div class="option-name">Tắm cơ bản</div>
             <div class="option-desc">Tắm sạch, sấy khô</div>
-            <div class="option-price">100.000đ</div>
+            <div class="option-price" data-base="100000">100.000đ</div>
           </div>
           <div class="option-card" data-value="premium">
             <div class="option-icon" style="background:#F3E5F5;color:#8E24AA">${ICONS.shield}</div>
             <div class="option-name">Tắm cao cấp</div>
             <div class="option-desc">Dầu gội dược liệu, sấy tạo kiểu, xịt thơm</div>
-            <div class="option-price">200.000đ</div>
+            <div class="option-price" data-base="200000">200.000đ</div>
           </div>
           <div class="option-card" data-value="spa">
             <div class="option-icon" style="background:var(--primary-bg);color:var(--primary)">${ICONS.heart}</div>
             <div class="option-name">Spa trọn gói</div>
             <div class="option-desc">Tắm + massage + vệ sinh tai, mắt, móng</div>
-            <div class="option-price">350.000đ</div>
+            <div class="option-price" data-base="350000">350.000đ</div>
           </div>
         </div>
       </div>
@@ -808,14 +963,91 @@ function screenBath() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Spa</label>
-        <div class="location-wrap">
-          <input type="text" class="form-input" value="PetSpa Đống Đa — 45 Tây Sơn">
-          <span class="suffix">${ICONS.pin}</span>
-        </div>
+        <label class="form-label">Chọn tiệm chăm sóc</label>
+        ${salonPickerHTML(state.booking.salonId, 'bath-salon-list')}
+      </div>
+
+      <div class="price-summary">
+        <div class="ps-note">${ICONS.clock} Giá thay đổi theo tiệm & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-total"><span>Tạm tính</span><span id="bath-total" class="ps-amount">—</span></div>
       </div>
 
       <button class="btn-primary" onclick="handleServiceSuccess('Tắm thú cưng','bath')">Xác nhận</button>
+      <button class="btn-ghost" onclick="goBack()">Quay lại</button>
+    </div>
+  `;
+}
+
+/* ===== PET RECORD: Hồ sơ y tế & lịch sử khám ===== */
+function screenPetRecord() {
+  const pet = state.pets.find(p => p.id === state.viewPetId) || state.pets[0];
+  if (!pet) return `<div class="screen-content"><p>Không tìm thấy thú cưng</p></div>`;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const upcoming = (state.appointments || [])
+    .filter(a => a.petId === pet.id && a.dateISO && new Date(a.dateISO) >= today)
+    .sort((a, b) => new Date(a.dateISO) - new Date(b.dateISO));
+  const history = (pet.history || []).slice().sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+
+  const kindColor = (k) => k === 'vaccine' ? 'var(--primary)' : k === 'spa' ? '#8E24AA' : 'var(--green)';
+  const kindIcon = (k) => k === 'vaccine' ? ICONS.syringe : k === 'spa' ? ICONS.heart : ICONS.shield;
+
+  const infoItem = (label, val) => `
+    <div class="rec-info-item"><div class="rii-label">${label}</div><div class="rii-val">${val}</div></div>`;
+
+  const vaccineTags = (pet.vaccines || []).map(v => `<span class="vac-tag">${v}</span>`).join('');
+
+  const upcomingHTML = upcoming.length ? upcoming.map(a => `
+    <div class="rec-event">
+      <div class="rec-ic" style="background:var(--primary-bg);color:${a.color || 'var(--primary)'}">${ICONS.clock}</div>
+      <div class="rec-event-body">
+        <div class="rec-event-title">${a.type}</div>
+        <div class="rec-event-meta">${formatViDate(a.dateISO)} · ${a.time} · ${a.place}</div>
+      </div>
+    </div>`).join('') : '<div class="rec-empty">Chưa có lịch hẹn sắp tới</div>';
+
+  const historyHTML = history.length ? history.map(h => `
+    <div class="rec-event">
+      <div class="rec-ic" style="background:var(--primary-bg);color:${kindColor(h.kind)}">${kindIcon(h.kind)}</div>
+      <div class="rec-event-body">
+        <div class="rec-event-title">${h.detail}</div>
+        <div class="rec-event-sub">${h.type}${h.vet ? ' · ' + h.vet : ''}</div>
+        <div class="rec-event-meta">${formatViDate(h.dateISO)} · ${h.place}</div>
+        ${h.note ? `<div class="rec-event-note">${h.note}</div>` : ''}
+      </div>
+    </div>`).join('') : '<div class="rec-empty">Chưa có lịch sử khám</div>';
+
+  return `
+    <div class="screen-content">
+      <div class="rec-header">
+        <div class="rec-avatar"><img src="${pet.img}" alt="${pet.name}"></div>
+        <div class="rec-head-info">
+          <div class="rec-name">${pet.name}</div>
+          <div class="rec-breed">${pet.breed}</div>
+          <span class="pet-status ${pet.status === 'healthy' ? 'status-healthy' : 'status-warn'}">${pet.statusLabel}</span>
+        </div>
+      </div>
+
+      <div class="section-hdr"><span class="sec-title">Hồ sơ y tế</span></div>
+      <div class="rec-info-grid">
+        ${infoItem('Tuổi', pet.age + ' tuổi')}
+        ${infoItem('Giới tính', pet.gender === 'female' ? 'Cái' : 'Đực')}
+        ${infoItem('Cân nặng', pet.weight + ' kg')}
+        ${infoItem('Ngày sinh', formatViDate(pet.birthday))}
+        ${infoItem('Triệt sản', pet.neutered || '—')}
+        ${infoItem('Dị ứng', pet.allergies || 'Không')}
+        ${infoItem('Nhóm máu', pet.bloodType || '—')}
+      </div>
+
+      ${vaccineTags ? `<div class="rec-vaccines"><div class="rii-label" style="margin-bottom:6px">Đã tiêm</div><div class="vac-row">${vaccineTags}</div></div>` : ''}
+
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Lịch hẹn sắp tới</span></div>
+      <div class="rec-list">${upcomingHTML}</div>
+
+      <div class="section-hdr" style="margin-top:18px"><span class="sec-title">Lịch sử khám & tiêm</span></div>
+      <div class="rec-list">${historyHTML}</div>
+
+      <button class="btn-secondary" onclick="editPetById(${pet.id})" style="margin-top:14px">Chỉnh sửa thông tin</button>
       <button class="btn-ghost" onclick="goBack()">Quay lại</button>
     </div>
   `;
@@ -995,6 +1227,7 @@ function screenGenericSuccess() {
     { icon: ICONS.calendar, label: 'Ngày & Giờ', value: s.datetime || '—' },
     { icon: ICONS.pin, label: 'Địa điểm', value: s.location || '—' },
   ];
+  if (s.price) rows.push({ icon: ICONS.star, label: 'Giá', value: s.price });
 
   const summaryRows = rows.map(r => `
     <div class="summary-row">
