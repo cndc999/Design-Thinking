@@ -840,7 +840,7 @@ function screenCheckup() {
       </div>
 
       <div class="price-summary">
-        <div class="ps-note">${ICONS.clock} Giá khám theo phòng khám & khung giờ — giờ sớm rẻ hơn</div>
+        <div class="ps-note">${ICONS.clock} Giá khám theo phòng khám & khung giờ</div>
         <div class="ps-total"><span>Tạm tính</span><span id="checkup-total" class="ps-amount">${formatVND(clinicPrice(state.checkupTypes[0].base))}</span></div>
       </div>
 
