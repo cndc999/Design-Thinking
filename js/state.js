@@ -261,7 +261,7 @@ const state = {
       id: 4, userId: 'user4', userName: 'Phương Linh', userAvatar: 'PL',
       petName: 'Kẹo', petBreed: 'Poodle',
       content: 'Mới tắm cho Kẹo xong, thơm phức luôn nha cả nhà',
-      img: 'https://cdn.pixabay.com/photo/2016/02/19/11/19/dog-1209129_640.jpg',
+      img: 'img/icon.jpeg',
       likes: 31, liked: false, time: 'Hôm qua',
       commentList: [
         { id: 41, userName: 'Gia Bảo',  userAvatar: 'GB', text: 'Nhìn thơm thật sự', time: 'Hôm qua' },
